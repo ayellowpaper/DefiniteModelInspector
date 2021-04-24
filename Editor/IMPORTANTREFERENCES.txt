@@ -1,0 +1,3 @@
+SceneViewMotion.DoViewTool for how Unity handles scene movement, rotation etc.
+PreviewSceneResources in ShaderGraph for how Unity previews scenes
+

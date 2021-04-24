@@ -1,0 +1,17 @@
+{
+  "name": "com.zelude.meshpreview",
+  "version": "1.0.0",
+  "displayName": "Mesh Preview",
+  "description": "Mesh Preview.",
+  "unity": "2020.3",
+  "keywords": [
+    "package",
+	"mesh",
+	"preview"
+  ],
+  "author": {
+    "name": "Lucas Wilke",
+    "email": "ayellowpaperatwork@gmail.com",
+    "url": "https://www.ayellowpaper.com"
+  }
+}
