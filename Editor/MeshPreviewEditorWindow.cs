@@ -5,6 +5,8 @@ using UnityEditor;
 using UnityEditor.Callbacks;
 using System.Reflection;
 using UnityEngine.Experimental.Rendering;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 
 namespace ZeludeEditor
 {
@@ -22,7 +24,6 @@ namespace ZeludeEditor
         private GameObject _previewGO;
         private ModelImporter _modelImporter;
         private Editor _modelImporterEditor;
-        private PreviewRenderUtility _previewRenderer;
         private Transform _cameraPivot;
 
         private static Dictionary<string, MeshPreviewEditorWindow> _registeredEditors = new Dictionary<string, MeshPreviewEditorWindow>();
@@ -61,29 +62,11 @@ namespace ZeludeEditor
             _modelImporterEditor = Editor.CreateEditor(_modelImporter);
 
             titleContent = new GUIContent(_sourceGO.name, AssetPreview.GetAssetPreview(_sourceGO));
-            _previewRenderer = new PreviewRenderUtility();
+            _cameraPreviewTest = new CameraPreviewTest();
             _previewGO = Instantiate(_sourceGO);
-            _previewRenderer.AddSingleGO(_previewGO);
-
-            _cameraPivot = new GameObject("CameraRoot").transform;
-            _cameraPivot.gameObject.AddComponent<DrawGizmoTest>();
-            _cameraPivot.position = Vector3.zero;
-            _previewRenderer.AddSingleGO(_cameraPivot.gameObject);
-            _previewRenderer.camera.transform.SetParent(_cameraPivot.transform);
-
-            var sceneView = SceneView.lastActiveSceneView;
-            var camera = sceneView.camera;
-
-            _previewRenderer.cameraFieldOfView = 80f;
-            _previewRenderer.camera.nearClipPlane = 0.01f;
-            _previewRenderer.camera.clearFlags = CameraClearFlags.Skybox;
-            _previewRenderer.camera.transform.rotation = _cameraRotation;
-            EditorUtility.SetCameraAnimateMaterials(_previewRenderer.camera, true);
-            Frame();
+            _cameraPreviewTest.AddGameObject(_previewGO);
 
             _registeredEditors.Add(_guidString, this);
-
-            _cameraPreviewTest = new CameraPreviewTest();
 
             //var wireframeMat = CreateWireframeMaterial();
             //foreach (var renderer in _previewGO.GetComponentsInChildren<Renderer>())
@@ -111,7 +94,6 @@ namespace ZeludeEditor
             if (_cameraPreviewTest != null) _cameraPreviewTest.Dispose();
             _registeredEditors.Remove(_guidString);
             if (_modelImporterEditor != null) DestroyImmediate(_modelImporterEditor);
-            if (_previewRenderer != null) _previewRenderer.Cleanup();
         }
 
         private void Update()
@@ -121,6 +103,11 @@ namespace ZeludeEditor
 
         private void OnGUI()
         {
+            GUILayout.BeginHorizontal(EditorStyles.toolbar);
+            GUILayout.Toggle(false, EditorGUIUtility.TrIconContent("SceneViewTools", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
             var rect = GUILayoutUtility.GetRect(400, 1000);
 
             var current = Event.current;
@@ -131,89 +118,55 @@ namespace ZeludeEditor
                 {
                     _cameraRotation = Quaternion.AngleAxis(current.delta.y * 0.003f * 57.29578f, _cameraRotation * Vector3.right) * _cameraRotation;
                     _cameraRotation = Quaternion.AngleAxis(current.delta.x * 0.003f * 57.29578f, Vector3.up) * _cameraRotation;
-                    _cameraPivot.rotation = _cameraRotation;
+                    //_cameraPivot.rotation = _cameraRotation;
 
                     Event.current.Use();
                 }
             }
 
-            if (Tools.viewTool == ViewTool.Pan)
-            {
-                if (current.type == EventType.MouseDrag && current.button == 2)
-                {
-                    if (rect.Contains(Event.current.mousePosition))
-                    {
-                        Vector3 position = _previewRenderer.camera.transform.position;
-                        var delta = current.delta;
-                        _previewRenderer.camera.transform.position = Vector3.zero;
-                        Vector3 vector = _previewRenderer.camera.transform.rotation * new Vector3(0f, 0f, _cameraDistance);
-                        Vector3 position2 = _previewRenderer.camera.WorldToScreenPoint(vector);
-                        position2 += new Vector3(delta.x, delta.y, 0f);
-                        Vector3 result = _previewRenderer.camera.ScreenToWorldPoint(position2) - vector;
-                        result *= EditorGUIUtility.pixelsPerPoint;
-                        _previewRenderer.camera.transform.position = position;
+            //if (Tools.viewTool == ViewTool.Pan)
+            //{
+            //    if (current.type == EventType.MouseDrag && current.button == 2)
+            //    {
+            //        if (rect.Contains(Event.current.mousePosition))
+            //        {
+            //            Vector3 position = _previewRenderer.camera.transform.position;
+            //            var delta = current.delta;
+            //            _previewRenderer.camera.transform.position = Vector3.zero;
+            //            Vector3 vector = _previewRenderer.camera.transform.rotation * new Vector3(0f, 0f, _cameraDistance);
+            //            Vector3 position2 = _previewRenderer.camera.WorldToScreenPoint(vector);
+            //            position2 += new Vector3(delta.x, delta.y, 0f);
+            //            Vector3 result = _previewRenderer.camera.ScreenToWorldPoint(position2) - vector;
+            //            result *= EditorGUIUtility.pixelsPerPoint;
+            //            _previewRenderer.camera.transform.position = position;
 
-                        if (current.shift)
-                        {
-                            result *= 4f;
-                        }
-                        _cameraPivot.transform.position += result;
+            //            if (current.shift)
+            //            {
+            //                result *= 4f;
+            //            }
+            //            _cameraPivot.transform.position += result;
 
-                        Event.current.Use();
-                    }
-                }
-            }
+            //            Event.current.Use();
+            //        }
+            //    }
+            //}
 
-            if (current.type == EventType.ScrollWheel)
-            {
-                _cameraDistance += _cameraDistance * current.delta.y * 0.015f * 3f;
-                //_cameraPivot.transform.position = bounds.center;
-                _previewRenderer.camera.transform.localPosition = new Vector3(0, 0, -_cameraDistance);
-                Event.current.Use();
-            }
+            //if (current.type == EventType.ScrollWheel)
+            //{
+            //    _cameraDistance += _cameraDistance * current.delta.y * 0.015f * 3f;
+            //    //_cameraPivot.transform.position = bounds.center;
+            //    _previewRenderer.camera.transform.localPosition = new Vector3(0, 0, -_cameraDistance);
+            //    Event.current.Use();
+            //}
 
             if (current.type == EventType.KeyDown && current.keyCode == KeyCode.F)
             {
                 Frame();
             }
 
-            //if (current.type != EventType.Repaint)
-            //{
-            //    Handles.SetCamera(_previewRenderer.camera);
-            //}
-            //else
-            {
-                _previewRenderer.BeginPreview(rect, GUIStyle.none);
-                HandleUtility.PushCamera(_previewRenderer.camera);
-                _previewRenderer.Render(true, true);
-                HandleUtility.PopCamera(_previewRenderer.camera);
 
 
-                //MethodInfo drawGizmosMethod = typeof(Handles).GetMethod("Internal_DoDrawGizmos", BindingFlags.NonPublic | BindingFlags.Static);
-                //drawGizmosMethod?.Invoke(null, new object[] { _previewRenderer.camera });
-
-                //var lastSceneView = SceneView.lastActiveSceneView;
-                //var gridsProp = typeof(SceneView).GetProperty("sceneViewGrids", BindingFlags.NonPublic | BindingFlags.Instance);
-                //var grids = gridsProp.GetValue(lastSceneView);
-                //var prepareGridRenderMethod = grids.GetType().GetMethod("PrepareGridRender", BindingFlags.NonPublic | BindingFlags.Instance);
-                //var drawGridParameters = prepareGridRenderMethod.Invoke(grids, new object[] { _previewRenderer.camera, _previewRenderer.camera.transform.position, _previewRenderer.camera.transform.rotation, _previewRenderer.camera.orthographicSize, _previewRenderer.camera.orthographic });
-
-                //MethodInfo drawCameraStep1 = typeof(Handles).GetMethod("DrawCameraStep1", BindingFlags.NonPublic | BindingFlags.Static);
-                //MethodInfo drawCameraStep2 = typeof(Handles).GetMethod("DrawCameraStep2", BindingFlags.NonPublic | BindingFlags.Static);
-                //drawCameraStep1?.Invoke(null, new object[] { rect, _previewRenderer.camera, DrawCameraMode.TexturedWire, drawGridParameters, true });
-                //drawCameraStep2?.Invoke(null, new object[] { _previewRenderer.camera, DrawCameraMode.TexturedWire, true });
-
-
-
-                _previewRenderer.EndAndDrawPreview(rect);
-            }
-
-            if (current.type == EventType.Repaint)
-            {
-                //_cameraPreviewTest.Render(rect);
-            }
-
-            //_modelImporterEditor.OnInspectorGUI();
+            _cameraPreviewTest.Render(rect);
         }
 
         private void Frame()
@@ -221,7 +174,7 @@ namespace ZeludeEditor
             var bounds = CalculateBounds();
             _cameraDistance = bounds.extents.magnitude * 3f;
             _cameraPivot.transform.position = bounds.center;
-            _previewRenderer.camera.transform.localPosition = new Vector3(0, 0, -_cameraDistance);
+            //_previewRenderer.camera.transform.localPosition = new Vector3(0, 0, -_cameraDistance);
         }
 
         private Bounds CalculateBounds()
@@ -254,77 +207,127 @@ namespace ZeludeEditor
 }
 
 
-
-
-
-
-
-
 class CameraPreviewTest : System.IDisposable
 {
-    private Camera m_PreviewCamera;
-    private RenderTexture m_PreviewTexture;
-    private int m_QualitySettingsAntiAliasing = -1;
+    private RenderTexture _renderTexture;
+    private Material _material;
 
-    public Camera Camera => m_PreviewCamera;
+    public readonly Scene Scene;
+    public readonly Camera Camera;
+    public RenderTexture RenderTexture => _renderTexture;
+
+    private readonly List<GameObject> m_GameObjects = new List<GameObject>();
 
     public CameraPreviewTest()
     {
-        m_PreviewCamera = EditorUtility.CreateGameObjectWithHideFlags("Preview Camera", HideFlags.HideAndDontSave, typeof(Camera)).GetComponent<Camera>();
-        m_PreviewCamera.enabled = false;
-        m_PreviewCamera.useOcclusionCulling = false;
-        m_PreviewCamera.renderingPath = RenderingPath.Forward;
+        Scene = EditorSceneManager.NewPreviewScene();
+        Debug.Log(Scene);
+
+        GameObject camGO = EditorUtility.CreateGameObjectWithHideFlags("Preview Scene Camera", HideFlags.HideAndDontSave, typeof(Camera));
+        AddGameObject(camGO);
+        Camera = camGO.GetComponent<Camera>();
+        Camera.enabled = false;
+        Camera.cameraType = CameraType.Preview;
+        Camera.clearFlags = CameraClearFlags.Skybox;
+        Camera.fieldOfView = 50f;
+        Camera.farClipPlane = 1000f;
+        Camera.nearClipPlane = 0.1f;
+        Camera.renderingPath = RenderingPath.Forward;
+        Camera.useOcclusionCulling = false;
+        Camera.transform.position = new Vector3(0, 0, -10);
+        Camera.scene = Scene;
+
+        Shader shader = Shader.Find("Hidden/Internal-Colored");
+        _material = new Material(shader);
+        _material.hideFlags = HideFlags.HideAndDontSave;
+        _material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        _material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        _material.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+        _material.SetInt("_ZWrite", 0);
     }
 
     public void Dispose()
     {
-        if (m_PreviewCamera != null)
+        EditorSceneManager.ClosePreviewScene(Scene);
+        foreach (GameObject gameObject in m_GameObjects)
         {
-            Object.DestroyImmediate(m_PreviewCamera.gameObject, allowDestroyingAssets: true);
+            Object.DestroyImmediate(gameObject, true);
         }
+        if (RenderTexture != null) Object.DestroyImmediate(RenderTexture, true);
+        if (_material != null) Object.DestroyImmediate(_material, true);
+        m_GameObjects.Clear();
+    }
+
+    public void AddGameObject(GameObject go)
+    {
+        if (!m_GameObjects.Contains(go))
+        {
+            SceneManager.MoveGameObjectToScene(go, Scene);
+            m_GameObjects.Add(go);
+        }
+    }
+
+    public void AddManagedGO(GameObject go)
+    {
+        SceneManager.MoveGameObjectToScene(go, Scene);
     }
 
     public void Render(Rect rect)
     {
-        MethodInfo emitMethod = typeof(Handles).GetMethod("EmitGUIGeometryForCamera", BindingFlags.NonPublic | BindingFlags.Static);
-        var material = typeof(EditorGUIUtility).GetProperty("GUITextureBlit2SRGBMaterial", BindingFlags.NonPublic | BindingFlags.Static);
-        MethodInfo drawGizmosMethod = typeof(Handles).GetMethod("Internal_DoDrawGizmos", BindingFlags.NonPublic | BindingFlags.Static);
+        var materialProperty = typeof(EditorGUIUtility).GetProperty("GUITextureBlit2SRGBMaterial", BindingFlags.NonPublic | BindingFlags.Static);
 
-        var sceneView = SceneView.lastActiveSceneView;
-        var camera = sceneView.camera;
-        m_PreviewCamera.CopyFrom(sceneView.camera);
-        if (sceneView.camera.overrideSceneCullingMask != 0)
-        {
-            m_PreviewCamera.overrideSceneCullingMask = sceneView.camera.overrideSceneCullingMask;
-        }
+        UpdateRenderTexture((int)rect.width, (int)rect.height);
+        Camera.targetTexture = _renderTexture;
+        Camera.pixelRect = new Rect(0f, 0f, rect.width, rect.height);
+        Camera.Render();
+        DrawHandles();
 
-        RenderTexture previewTextureWithSizeAndAA = GetPreviewTextureWithSizeAndAA((int)rect.width, (int)rect.height);
-        m_PreviewCamera.targetTexture = previewTextureWithSizeAndAA;
-        m_PreviewCamera.pixelRect = new Rect(0f, 0f, rect.width, rect.height);
-        //Handles.EmitGUIGeometryForCamera(camera, previewCamera);
-        emitMethod.Invoke(null, new object[] { camera, m_PreviewCamera });
-        if (camera.usePhysicalProperties)
-        {
-            RenderTexture active = RenderTexture.active;
-            RenderTexture.active = previewTextureWithSizeAndAA;
-            GL.Clear(clearDepth: false, clearColor: true, Color.clear);
-            RenderTexture.active = active;
-        }
-        //Handles.DrawGizmos(m_PreviewCamera);
-        m_PreviewCamera.Render();
-        Graphics.DrawTexture(rect, previewTextureWithSizeAndAA, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color, material.GetValue(null) as Material);
-        drawGizmosMethod?.Invoke(null, new object[] { m_PreviewCamera });
+        Graphics.DrawTexture(rect, _renderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color, materialProperty.GetValue(null) as Material);
     }
 
-    private RenderTexture GetPreviewTextureWithSizeAndAA(int width, int height)
+    private void UpdateRenderTexture(int width, int height)
     {
-        int num = Mathf.Max(1, QualitySettings.antiAliasing);
-        if (m_PreviewTexture == null || m_PreviewTexture.width != width || m_PreviewTexture.height != height || m_PreviewTexture.antiAliasing != num)
+        int aa = Mathf.Max(1, QualitySettings.antiAliasing);
+        if (_renderTexture == null || _renderTexture.width != width || _renderTexture.height != height || _renderTexture.antiAliasing != aa)
         {
-            m_PreviewTexture = new RenderTexture(width, height, 24, SystemInfo.GetGraphicsFormat(DefaultFormat.LDR));
-            m_QualitySettingsAntiAliasing = QualitySettings.antiAliasing;
-            m_PreviewTexture.antiAliasing = num;
+            if (_renderTexture != null)
+                Object.DestroyImmediate(_renderTexture, true);
+            _renderTexture = new RenderTexture(width, height, 24, SystemInfo.GetGraphicsFormat(DefaultFormat.LDR));
+            _renderTexture.hideFlags = HideFlags.HideAndDontSave;
+            _renderTexture.antiAliasing = aa;
         }
-        return m_PreviewTexture;
+    }
+
+    private void DrawHandles()
+    {
+        var prevTexture = RenderTexture.active;
+        RenderTexture.active = _renderTexture;
+
+        _material.SetPass(0);
+
+        GL.PushMatrix();
+        // Set transformation matrix for drawing to
+        // match our transform
+        //GL.MultMatrix(transform.localToWorldMatrix);
+
+        int lineCount = 20;
+        float radius = 1f;
+        // Draw lines
+        GL.Begin(GL.LINES);
+        for (int i = 0; i < lineCount; ++i)
+        {
+            float a = i / (float)lineCount;
+            float angle = a * Mathf.PI * 2;
+            // Vertex colors change from red to green
+            GL.Color(new Color(a, 1 - a, 0, 0.8F));
+            // One vertex at transform position
+            GL.Vertex3(0, 0, 0);
+            // Another vertex at edge of circle
+            GL.Vertex3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0);
+        }
+        GL.End();
+        GL.PopMatrix();
+
+        RenderTexture.active = prevTexture;
     }
 }

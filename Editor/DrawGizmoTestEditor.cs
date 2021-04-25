@@ -46,6 +46,8 @@ public class DrawGizmoTestEditor : Editor
 
     private void OnSceneGUI()
     {
+        Handles.color = Color.blue;
+        Handles.DrawWireCube(Vector3.zero, Vector3.one);
         if (_typedTarget.PreviewCamera != null)
         {
             Handles.color = Color.red;
