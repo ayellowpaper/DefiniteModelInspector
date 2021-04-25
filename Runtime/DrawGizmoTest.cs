@@ -49,7 +49,9 @@ public class DrawGizmoTest : MonoBehaviour
         GL.PushMatrix();
         // Set transformation matrix for drawing to
         // match our transform
-        GL.MultMatrix(transform.localToWorldMatrix);
+        GL.modelview = Camera.current.worldToCameraMatrix * transform.localToWorldMatrix;
+        //GL.MultMatrix(transform.localToWorldMatrix);
+        //GL.MultMatrix(transform.localToWorldMatrix);
 
         int lineCount = 20;
         float radius = 1f;
