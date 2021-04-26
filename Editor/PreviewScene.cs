@@ -43,8 +43,6 @@ namespace ZeludeEditor
             light.shadows = LightShadows.Soft;
             light.color = new Color(1, 244/255f, 214/255f);
             light.intensity = 2f;
-
-            Debug.Log(RenderSettings.ambientMode);
         }
 
         public void Dispose()

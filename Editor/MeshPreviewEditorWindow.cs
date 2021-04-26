@@ -14,6 +14,7 @@ namespace ZeludeEditor
         private string _assetPath;
         private GameObject _sourceGO;
         private GameObject _previewGO;
+        private GameObject _floor;
         private ModelImporter _modelImporter;
         private Editor _modelImporterEditor;
         private PreviewScene _previewScene;
@@ -34,13 +35,26 @@ namespace ZeludeEditor
 
         private static class Styles
         {
-            public static readonly GUIStyle DropShadowLabel;
+            public static readonly GUIStyle DropShadowLabelStyle;
+            public static readonly GUIContent ToggleVerticesContent;
+            public static readonly GUIContent ToggleNormalsContent;
+            public static readonly GUIContent ToggleTangentsContent;
+            public static readonly GUIContent ToggleBinormalsContent;
+            public static readonly GUIContent ToggleGridContent;
+            public static readonly GUIContent ToggleFloorContent;
 
             static Styles()
             {
-                DropShadowLabel = new GUIStyle("PreOverlayLabel");
-                DropShadowLabel.alignment = TextAnchor.MiddleLeft;
-                DropShadowLabel.fontSize = 13;
+                DropShadowLabelStyle = new GUIStyle("PreOverlayLabel");
+                DropShadowLabelStyle.alignment = TextAnchor.MiddleLeft;
+                DropShadowLabelStyle.fontSize = 13;
+
+                ToggleVerticesContent = EditorGUIUtility.TrTextContent("Vertex", "");
+                ToggleNormalsContent = EditorGUIUtility.TrTextContent("Normal", "");
+                ToggleTangentsContent = EditorGUIUtility.TrTextContent("Tangent", "");
+                ToggleBinormalsContent = EditorGUIUtility.TrTextContent("Binormal", "");
+                ToggleGridContent = EditorGUIUtility.TrIconContent("GridAxisY", "");
+                ToggleFloorContent = EditorGUIUtility.TrIconContent(Resources.Load<Texture>("MEshPreview/Floor"), "");
             }
         }
 
@@ -51,6 +65,8 @@ namespace ZeludeEditor
             public bool ShowNormals = false;
             public bool ShowTangents = false;
             public bool ShowBinormals = false;
+            public bool ShowGrid = true;
+            public bool ShowFloor = true;
         }
 
         [OnOpenAsset(1)]
@@ -93,15 +109,17 @@ namespace ZeludeEditor
 
             var bounds = CalculateBounds(_previewGO);
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            _previewScene.AddGameObject(ground);
-            ground.transform.position = new Vector3(0, bounds.center.y - bounds.extents.y, 0);
+            _floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            _previewScene.AddGameObject(_floor);
+            _floor.transform.position = new Vector3(0, bounds.center.y - bounds.extents.y, 0);
 
             _meshPreviewSettings = new MeshPreviewSettings();
 
             _previewSceneMotion = new PreviewSceneMotion(_previewScene);
             _previewSceneMotion.TargetBounds = bounds;
             _previewSceneMotion.Frame();
+
+                        _floor.SetActive(_meshPreviewSettings.ShowFloor);
 
             var filters = _sourceGO.GetComponentsInChildren<MeshFilter>();
             List<Mesh> meshes = new List<Mesh>();
@@ -154,10 +172,18 @@ namespace ZeludeEditor
         private void OnGUI()
         {
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
-            _meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, EditorGUIUtility.TrTextContent("Vertex", ""), EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, EditorGUIUtility.TrTextContent("Normal", ""), EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, EditorGUIUtility.TrTextContent("Tangent", ""), EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, EditorGUIUtility.TrTextContent("Binormal", ""), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, Styles.ToggleVerticesContent, EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, Styles.ToggleNormalsContent, EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, Styles.ToggleTangentsContent, EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, Styles.ToggleBinormalsContent, EditorStyles.toolbarButton);
+            EditorGUILayout.Space();
+            _meshPreviewSettings.ShowGrid = GUILayout.Toggle(_meshPreviewSettings.ShowGrid, Styles.ToggleGridContent, EditorStyles.toolbarButton);
+            EditorGUI.BeginChangeCheck();
+            _meshPreviewSettings.ShowFloor = GUILayout.Toggle(_meshPreviewSettings.ShowFloor, Styles.ToggleFloorContent, EditorStyles.toolbarButton);
+            if (EditorGUI.EndChangeCheck())
+            {
+                _floor.SetActive(_meshPreviewSettings.ShowFloor);
+            }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 
@@ -184,9 +210,9 @@ namespace ZeludeEditor
         private void DrawInfoLine(string label, string text)
         {
             const int spacing = 65;
-            var rect = GUILayoutUtility.GetRect(GUIContent.none, Styles.DropShadowLabel);
-            EditorGUI.DropShadowLabel(new Rect(rect.x, rect.y, spacing, rect.height), EditorGUIUtility.TrTextContent(label), Styles.DropShadowLabel);
-            EditorGUI.DropShadowLabel(new Rect(rect.x + spacing, rect.y, rect.width - spacing, rect.height), EditorGUIUtility.TrTextContent(text), Styles.DropShadowLabel);
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, Styles.DropShadowLabelStyle);
+            EditorGUI.DropShadowLabel(new Rect(rect.x, rect.y, spacing, rect.height), EditorGUIUtility.TrTextContent(label), Styles.DropShadowLabelStyle);
+            EditorGUI.DropShadowLabel(new Rect(rect.x + spacing, rect.y, rect.width - spacing, rect.height), EditorGUIUtility.TrTextContent(text), Styles.DropShadowLabelStyle);
         }
 
         public static Bounds CalculateBounds(GameObject go)
@@ -202,7 +228,7 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
-            DrawGrid();
+            if (_meshPreviewSettings.ShowGrid) DrawGrid();
             if (_meshPreviewSettings.ShowNormals) DrawNormals();
             if (_meshPreviewSettings.ShowVertices) DrawVertices();
             if (_meshPreviewSettings.ShowTangents) DrawTangents();
