@@ -11,7 +11,7 @@ namespace ZeludeEditor
         [SerializeField]
         public float CameraDistance = 5f;
         [SerializeField]
-        public Quaternion PivotRotation = Quaternion.identity;
+        public Quaternion PivotRotation = Quaternion.Euler(25f, 200f, 0);
         [SerializeField]
         public Vector3 PivotPosition = Vector3.zero;
         public readonly PreviewScene PreviewScene;
@@ -27,6 +27,8 @@ namespace ZeludeEditor
             Pivot.transform.position = Vector3.zero;
             PreviewScene.AddGameObject(Pivot.gameObject);
             PreviewScene.Camera.transform.SetParent(Pivot);
+            UpdateCameraDistance();
+            Pivot.transform.SetPositionAndRotation(PivotPosition, PivotRotation);
         }
 
         public void DoOnGUI(Rect rect)
@@ -91,7 +93,7 @@ namespace ZeludeEditor
 
         public void Frame()
         {
-            CameraDistance = TargetBounds.extents.magnitude * 3f;
+            CameraDistance = TargetBounds.extents.magnitude * 2f;
             Pivot.position = TargetBounds.center;
             UpdateCameraDistance();
         }
