@@ -40,6 +40,7 @@ namespace ZeludeEditor
             {
                 DropShadowLabel = new GUIStyle("PreOverlayLabel");
                 DropShadowLabel.alignment = TextAnchor.MiddleLeft;
+                DropShadowLabel.fontSize = 13;
             }
         }
 
@@ -147,10 +148,10 @@ namespace ZeludeEditor
         private void OnGUI()
         {
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
-            _meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, EditorGUIUtility.TrTextContent("Vertex", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, EditorGUIUtility.TrTextContent("Normal", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, EditorGUIUtility.TrTextContent("Tangent", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, EditorGUIUtility.TrTextContent("Binormal", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, EditorGUIUtility.TrTextContent("Vertex", ""), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, EditorGUIUtility.TrTextContent("Normal", ""), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, EditorGUIUtility.TrTextContent("Tangent", ""), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, EditorGUIUtility.TrTextContent("Binormal", ""), EditorStyles.toolbarButton);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 
@@ -170,13 +171,16 @@ namespace ZeludeEditor
 
         private void somefunc(int id)
         {
-            //GUILayout.Label($"Vertices: {_vertices.Length}");
-            var vertexGuiContent = EditorGUIUtility.TrTextContent(string.Format("Vertices: {0:n0}", _vertices.Length));
-            var trianglesGuiContent = EditorGUIUtility.TrTextContent(string.Format("Traingles: {0:n0}", _triangles.Length / 3));
-            var rect = GUILayoutUtility.GetRect(vertexGuiContent, Styles.DropShadowLabel);
-            EditorGUI.DropShadowLabel(rect, vertexGuiContent, Styles.DropShadowLabel);
-            var newRect = GUILayoutUtility.GetRect(trianglesGuiContent, Styles.DropShadowLabel);
-            EditorGUI.DropShadowLabel(newRect, trianglesGuiContent, Styles.DropShadowLabel);
+            DrawLine("Vertices", string.Format("{0:n0}", _vertices.Length));
+            DrawLine("Tris", string.Format("{0:n0}", _triangles.Length / 3));
+        }
+
+        private void DrawLine(string label, string text)
+        {
+            const int spacing = 65;
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, Styles.DropShadowLabel);
+            EditorGUI.DropShadowLabel(new Rect(rect.x, rect.y, spacing, rect.height), EditorGUIUtility.TrTextContent(label), Styles.DropShadowLabel);
+            EditorGUI.DropShadowLabel(new Rect(rect.x + spacing, rect.y, rect.width - spacing, rect.height), EditorGUIUtility.TrTextContent(text), Styles.DropShadowLabel);
         }
 
         private Bounds CalculateBounds()
