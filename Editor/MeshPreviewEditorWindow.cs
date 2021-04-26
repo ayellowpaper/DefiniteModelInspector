@@ -15,6 +15,8 @@ namespace ZeludeEditor
         [SerializeField]
         private float _cameraDistance = 5f;
 
+        public Camera Camera => _previewScene.Camera;
+
         private string _assetPath;
         private GameObject _sourceGO;
         private GameObject _previewGO;
@@ -22,10 +24,13 @@ namespace ZeludeEditor
         private Editor _modelImporterEditor;
         private Transform _cameraPivot;
         private PreviewScene _previewScene;
+        private Mesh[] _meshes;
+        private Vector3[] _vertices;
+        private Vector3[] _normals;
+        private Material _handleMat;
 
         private static Dictionary<string, MeshPreviewEditorWindow> _registeredEditors = new Dictionary<string, MeshPreviewEditorWindow>();
 
-        public Camera Camera => _previewScene.Camera;
 
         [OnOpenAsset(1)]
         public static bool OpenAssetHook(int instanceID, int line, int column)
@@ -55,8 +60,8 @@ namespace ZeludeEditor
         {
             _assetPath = AssetDatabase.GUIDToAssetPath(_guidString);
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
-            //_modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
-            //_modelImporterEditor = Editor.CreateEditor(_modelImporter);
+            _modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
+            _modelImporterEditor = Editor.CreateEditor(_modelImporter);
 
             titleContent = new GUIContent(_sourceGO.name, AssetPreview.GetAssetPreview(_sourceGO));
             _previewScene = new PreviewScene();
@@ -68,11 +73,22 @@ namespace ZeludeEditor
             _previewScene.AddGameObject(_cameraPivot.gameObject);
             _previewScene.Camera.transform.SetParent(_cameraPivot);
 
-            //var gizmoTest = new GameObject("GizmoTest");
-            //gizmoTest.AddComponent<DrawGizmoTest>();
-            //_previewScene.AddGameObject(gizmoTest);
+            _previewScene.OnDrawHandles += DrawHandles;
 
             Frame();
+
+            var filters = _sourceGO.GetComponentsInChildren<MeshFilter>();
+            List<Mesh> meshes = new List<Mesh>();
+            foreach (var filter in filters)
+            {
+                meshes.Add(filter.sharedMesh);
+            }
+            _meshes = meshes.ToArray();
+            _normals = _meshes[0].normals;
+            _vertices = _meshes[0].vertices;
+
+            var shader = Shader.Find("Zelude/Handles Lines");
+            _handleMat = new Material(shader);
 
             _registeredEditors.Add(_guidString, this);
         }
@@ -116,7 +132,6 @@ namespace ZeludeEditor
                 _cameraRotation = Quaternion.AngleAxis(current.delta.y * 0.003f * 57.29578f, _cameraRotation * Vector3.right) * _cameraRotation;
                 _cameraRotation = Quaternion.AngleAxis(current.delta.x * 0.003f * 57.29578f, Vector3.up) * _cameraRotation;
                 _cameraPivot.rotation = _cameraRotation;
-
                 Event.current.Use();
             }
 
@@ -158,8 +173,6 @@ namespace ZeludeEditor
                 Frame();
             }
 
-
-
             _previewScene.Render(viewportRect);
         }
 
@@ -185,6 +198,20 @@ namespace ZeludeEditor
                 bounds.Encapsulate(r.bounds);
             }
             return bounds;
+        }
+
+        private void DrawHandles()
+        {
+            _handleMat.SetPass(0);
+            _handleMat.SetInt("_HandleZTest", (int) UnityEngine.Rendering.CompareFunction.LessEqual);
+            GL.Begin(GL.LINES);
+            GL.Color(Color.red);
+            for (int i = 0; i < _vertices.Length; i++)
+            {
+                GL.Vertex(_vertices[i]);
+                GL.Vertex(_vertices[i] + _normals[i] * 0.003f);
+            }
+            GL.End();
         }
     }
 }

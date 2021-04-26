@@ -10,13 +10,15 @@ namespace ZeludeEditor
 {
     class PreviewScene : System.IDisposable
     {
-        private Material _material;
-
         public readonly Scene Scene;
         public readonly Camera Camera;
         public RenderTexture RenderTexture { get; private set; }
 
+        public event System.Action OnDrawHandles;
+
         private readonly List<GameObject> m_GameObjects = new List<GameObject>();
+        private Material _material;
+        private MethodInfo _setCurrentCameraMethod;
 
         public PreviewScene()
         {
@@ -31,7 +33,7 @@ namespace ZeludeEditor
             Camera.fieldOfView = 50f;
             Camera.farClipPlane = 100f;
             Camera.nearClipPlane = 0.01f;
-            Camera.renderingPath = RenderingPath.Forward;
+            //Camera.renderingPath = RenderingPath.Forward;
             Camera.useOcclusionCulling = false;
             Camera.transform.position = new Vector3(0, 0, -10);
             Camera.scene = Scene;
@@ -43,6 +45,8 @@ namespace ZeludeEditor
             _material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             _material.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
             _material.SetInt("_ZWrite", 0);
+
+            _setCurrentCameraMethod = typeof(Handles).GetMethod("Internal_SetCurrentCamera", BindingFlags.Static | BindingFlags.NonPublic);
         }
 
         public void Dispose()
@@ -55,6 +59,7 @@ namespace ZeludeEditor
             if (RenderTexture != null) Object.DestroyImmediate(RenderTexture, true);
             if (_material != null) Object.DestroyImmediate(_material, true);
             m_GameObjects.Clear();
+            OnDrawHandles = null;
         }
 
         public void AddGameObject(GameObject go)
@@ -99,40 +104,15 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
+            if (_setCurrentCameraMethod != null) _setCurrentCameraMethod?.Invoke(null, new object[] { Camera });
+
             var prevTexture = RenderTexture.active;
             RenderTexture.active = RenderTexture;
 
-            if (Event.current.type != EventType.Repaint)
-                Handles.SetCamera(Camera);
-            //Camera.matrix
-
-            _material.SetPass(0);
-
             GL.PushMatrix();
-            // Set transformation matrix for drawing to
-            // match our transform
-            //GL.MultMatrix(Vector3.zero);
-            //GL.MultMatrix(Matrix4x4.identity);
-            //GL.LoadProjectionMatrix(Camera.projectionMatrix);
             GL.modelview = Camera.worldToCameraMatrix;
             GL.LoadProjectionMatrix(Camera.projectionMatrix);
-
-            int lineCount = 20;
-            float radius = 1f;
-            // Draw lines
-            GL.Begin(GL.LINES);
-            for (int i = 0; i < lineCount; ++i)
-            {
-                float a = i / (float)lineCount;
-                float angle = a * Mathf.PI * 2;
-                // Vertex colors change from red to green
-                GL.Color(new Color(a, 1 - a, 0, 0.8F));
-                // One vertex at transform position
-                GL.Vertex3(0, 0, 0);
-                // Another vertex at edge of circle
-                GL.Vertex3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0);
-            }
-            GL.End();
+            OnDrawHandles?.Invoke();
             GL.PopMatrix();
 
             RenderTexture.active = prevTexture;
