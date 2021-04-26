@@ -91,10 +91,16 @@ namespace ZeludeEditor
             _previewScene.AddGameObject(_previewGO);
             _previewScene.OnDrawHandles += DrawHandles;
 
+            var bounds = CalculateBounds(_previewGO);
+
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            _previewScene.AddGameObject(ground);
+            ground.transform.position = new Vector3(0, bounds.center.y - bounds.extents.y, 0);
+
             _meshPreviewSettings = new MeshPreviewSettings();
 
             _previewSceneMotion = new PreviewSceneMotion(_previewScene);
-            _previewSceneMotion.TargetBounds = CalculateBounds();
+            _previewSceneMotion.TargetBounds = bounds;
             _previewSceneMotion.Frame();
 
             var filters = _sourceGO.GetComponentsInChildren<MeshFilter>();
@@ -164,18 +170,18 @@ namespace ZeludeEditor
             var testRect = new Rect(10, 30, 200, 200);
             GUI.BeginGroup(viewportRect);
             BeginWindows();
-            GUILayout.Window(0, new Rect(10, 10, 200, 200), somefunc, GUIContent.none, GUIStyle.none);
+            GUILayout.Window(0, new Rect(10, 10, 200, 200), MeshDetailsGUI, GUIContent.none, GUIStyle.none);
             EndWindows();
             GUI.EndGroup();
         }
 
-        private void somefunc(int id)
+        private void MeshDetailsGUI(int id)
         {
-            DrawLine("Vertices", string.Format("{0:n0}", _vertices.Length));
-            DrawLine("Tris", string.Format("{0:n0}", _triangles.Length / 3));
+            DrawInfoLine("Vertices", string.Format("{0:n0}", _vertices.Length));
+            DrawInfoLine("Tris", string.Format("{0:n0}", _triangles.Length / 3));
         }
 
-        private void DrawLine(string label, string text)
+        private void DrawInfoLine(string label, string text)
         {
             const int spacing = 65;
             var rect = GUILayoutUtility.GetRect(GUIContent.none, Styles.DropShadowLabel);
@@ -183,9 +189,9 @@ namespace ZeludeEditor
             EditorGUI.DropShadowLabel(new Rect(rect.x + spacing, rect.y, rect.width - spacing, rect.height), EditorGUIUtility.TrTextContent(text), Styles.DropShadowLabel);
         }
 
-        private Bounds CalculateBounds()
+        public static Bounds CalculateBounds(GameObject go)
         {
-            var renderer = _previewGO.GetComponentsInChildren<Renderer>();
+            var renderer = go.GetComponentsInChildren<Renderer>();
             var bounds = new Bounds();
             foreach (var r in renderer)
             {
@@ -196,6 +202,7 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
+            DrawGrid();
             if (_meshPreviewSettings.ShowNormals) DrawNormals();
             if (_meshPreviewSettings.ShowVertices) DrawVertices();
             if (_meshPreviewSettings.ShowTangents) DrawTangents();
@@ -269,6 +276,28 @@ namespace ZeludeEditor
             {
                 GL.Vertex(_vertices[i]);
                 GL.Vertex(_vertices[i] + _binormals[i] * 0.005f);
+            }
+            GL.End();
+        }
+
+        private void DrawGrid()
+        {
+            const int lineCount = 100;
+            const float lineSpace = 1f;
+            const float offset = (lineCount / 2f) * lineSpace;
+
+            _handleMat.SetPass(0);
+            GL.Begin(GL.LINES);
+            GL.Color(new Color(126/255f, 126/255f, 125/255f));
+            for (int x = 0; x < lineCount; x++)
+            {
+                GL.Vertex(new Vector3(x * lineSpace - offset, 0, -offset));
+                GL.Vertex(new Vector3(x * lineSpace - offset, 0, offset));
+            }
+            for (int y = 0; y < lineCount; y++)
+            {
+                GL.Vertex(new Vector3(-offset, 0, y * lineSpace - offset));
+                GL.Vertex(new Vector3(offset, 0, y * lineSpace - offset));
             }
             GL.End();
         }

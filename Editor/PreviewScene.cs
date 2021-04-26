@@ -18,8 +18,6 @@ namespace ZeludeEditor
 
         private readonly List<GameObject> m_GameObjects = new List<GameObject>();
 
-        private MethodInfo _setCurrentCameraMethod;
-
         public PreviewScene()
         {
             Scene = EditorSceneManager.NewPreviewScene();
@@ -38,7 +36,15 @@ namespace ZeludeEditor
             Camera.transform.position = new Vector3(0, 0, -10);
             Camera.scene = Scene;
 
-            _setCurrentCameraMethod = typeof(Handles).GetMethod("Internal_SetCurrentCamera", BindingFlags.Static | BindingFlags.NonPublic);
+            var light = new GameObject().AddComponent<Light>();
+            AddGameObject(light.gameObject);
+            light.type = LightType.Directional;
+            light.transform.rotation = Quaternion.Euler(45, 130, 90);
+            light.shadows = LightShadows.Soft;
+            light.color = new Color(1, 244/255f, 214/255f);
+            light.intensity = 2f;
+
+            Debug.Log(RenderSettings.ambientMode);
         }
 
         public void Dispose()
@@ -62,7 +68,7 @@ namespace ZeludeEditor
             }
         }
 
-        public void AddManagedGO(GameObject go)
+        public void AddSelfManagedGO(GameObject go)
         {
             SceneManager.MoveGameObjectToScene(go, Scene);
         }
@@ -98,8 +104,6 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
-            _setCurrentCameraMethod?.Invoke(null, new object[] { Camera });
-
             var prevTexture = RenderTexture.active;
             RenderTexture.active = RenderTexture;
 
