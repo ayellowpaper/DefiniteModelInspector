@@ -49,10 +49,10 @@ namespace ZeludeEditor
                 DropShadowLabelStyle.alignment = TextAnchor.MiddleLeft;
                 DropShadowLabelStyle.fontSize = 13;
 
-                ToggleVerticesContent = EditorGUIUtility.TrTextContent("Vertex", "");
-                ToggleNormalsContent = EditorGUIUtility.TrTextContent("Normal", "");
-                ToggleTangentsContent = EditorGUIUtility.TrTextContent("Tangent", "");
-                ToggleBinormalsContent = EditorGUIUtility.TrTextContent("Binormal", "");
+                ToggleVerticesContent = EditorGUIUtility.TrTextContent("Vertices", "");
+                ToggleNormalsContent = EditorGUIUtility.TrTextContent("Normals", "");
+                ToggleTangentsContent = EditorGUIUtility.TrTextContent("Tangents", "");
+                ToggleBinormalsContent = EditorGUIUtility.TrTextContent("Binormals", "");
                 ToggleGridContent = EditorGUIUtility.TrIconContent("GridAxisY", "");
                 ToggleFloorContent = EditorGUIUtility.TrIconContent(Resources.Load<Texture>("MEshPreview/Floor"), "");
             }
@@ -203,8 +203,8 @@ namespace ZeludeEditor
 
         private void MeshDetailsGUI(int id)
         {
-            DrawInfoLine("Vertices", string.Format("{0:n0}", _vertices.Length));
-            DrawInfoLine("Tris", string.Format("{0:n0}", _triangles.Length / 3));
+            DrawInfoLine("Vertices", string.Format("{0:n0}/{0:n0}", _vertices.Length));
+            DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _triangles.Length / 3));
         }
 
         private void DrawInfoLine(string label, string text)
