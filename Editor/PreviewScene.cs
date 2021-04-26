@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace ZeludeEditor
 {
-    class PreviewScene : System.IDisposable
+    public class PreviewScene : System.IDisposable
     {
         public readonly Scene Scene;
         public readonly Camera Camera;
@@ -17,7 +17,7 @@ namespace ZeludeEditor
         public event System.Action OnDrawHandles;
 
         private readonly List<GameObject> m_GameObjects = new List<GameObject>();
-        private Material _material;
+
         private MethodInfo _setCurrentCameraMethod;
 
         public PreviewScene()
@@ -38,14 +38,6 @@ namespace ZeludeEditor
             Camera.transform.position = new Vector3(0, 0, -10);
             Camera.scene = Scene;
 
-            Shader shader = Shader.Find("Hidden/Internal-Colored");
-            _material = new Material(shader);
-            _material.hideFlags = HideFlags.HideAndDontSave;
-            _material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            _material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            _material.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
-            _material.SetInt("_ZWrite", 0);
-
             _setCurrentCameraMethod = typeof(Handles).GetMethod("Internal_SetCurrentCamera", BindingFlags.Static | BindingFlags.NonPublic);
         }
 
@@ -57,7 +49,6 @@ namespace ZeludeEditor
                 Object.DestroyImmediate(gameObject, true);
             }
             if (RenderTexture != null) Object.DestroyImmediate(RenderTexture, true);
-            if (_material != null) Object.DestroyImmediate(_material, true);
             m_GameObjects.Clear();
             OnDrawHandles = null;
         }
@@ -76,17 +67,20 @@ namespace ZeludeEditor
             SceneManager.MoveGameObjectToScene(go, Scene);
         }
 
-        public void Render(Rect rect)
+        public void OnGUI(Rect rect)
         {
             var materialProperty = typeof(EditorGUIUtility).GetProperty("GUITextureBlit2SRGBMaterial", BindingFlags.NonPublic | BindingFlags.Static);
 
-            UpdateRenderTexture((int)rect.width, (int)rect.height);
-            Camera.targetTexture = RenderTexture;
-            Camera.pixelRect = new Rect(0f, 0f, rect.width, rect.height);
-            Camera.Render();
-            DrawHandles();
+            if (Event.current.type == EventType.Repaint)
+            {
+                UpdateRenderTexture((int)rect.width, (int)rect.height);
+                Camera.targetTexture = RenderTexture;
+                Camera.pixelRect = new Rect(0f, 0f, rect.width, rect.height);
+                Camera.Render();
+                DrawHandles();
 
-            Graphics.DrawTexture(rect, RenderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color, materialProperty.GetValue(null) as Material);
+                Graphics.DrawTexture(rect, RenderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color, materialProperty.GetValue(null) as Material);
+            }
         }
 
         private void UpdateRenderTexture(int width, int height)
@@ -104,7 +98,7 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
-            if (_setCurrentCameraMethod != null) _setCurrentCameraMethod?.Invoke(null, new object[] { Camera });
+            _setCurrentCameraMethod?.Invoke(null, new object[] { Camera });
 
             var prevTexture = RenderTexture.active;
             RenderTexture.active = RenderTexture;

@@ -10,27 +10,47 @@ namespace ZeludeEditor
     {
         [SerializeField]
         private string _guidString;
-        [SerializeField]
-        private Quaternion _cameraRotation = Quaternion.identity;
-        [SerializeField]
-        private float _cameraDistance = 5f;
-
-        public Camera Camera => _previewScene.Camera;
 
         private string _assetPath;
         private GameObject _sourceGO;
         private GameObject _previewGO;
         private ModelImporter _modelImporter;
         private Editor _modelImporterEditor;
-        private Transform _cameraPivot;
         private PreviewScene _previewScene;
         private Mesh[] _meshes;
         private Vector3[] _vertices;
         private Vector3[] _normals;
+        private Vector3[] _binormals;
+        private Vector4[] _tangents;
+        private int[] _triangles;
         private Material _handleMat;
+
+        [SerializeField]
+        private PreviewSceneMotion _previewSceneMotion;
+        [SerializeField]
+        private MeshPreviewSettings _meshPreviewSettings;
 
         private static Dictionary<string, MeshPreviewEditorWindow> _registeredEditors = new Dictionary<string, MeshPreviewEditorWindow>();
 
+        private static class Styles
+        {
+            public static readonly GUIStyle DropShadowLabel;
+
+            static Styles()
+            {
+                DropShadowLabel = new GUIStyle("PreOverlayLabel");
+                DropShadowLabel.alignment = TextAnchor.MiddleLeft;
+            }
+        }
+
+        [System.Serializable]
+        public class MeshPreviewSettings
+        {
+            public bool ShowVertices = false;
+            public bool ShowNormals = false;
+            public bool ShowTangents = false;
+            public bool ShowBinormals = false;
+        }
 
         [OnOpenAsset(1)]
         public static bool OpenAssetHook(int instanceID, int line, int column)
@@ -68,14 +88,13 @@ namespace ZeludeEditor
             _previewGO = Instantiate(_sourceGO);
             _previewGO.transform.position = Vector3.zero;
             _previewScene.AddGameObject(_previewGO);
-            _cameraPivot = new GameObject("Camera Pivot").transform;
-            _cameraPivot.transform.position = Vector3.zero;
-            _previewScene.AddGameObject(_cameraPivot.gameObject);
-            _previewScene.Camera.transform.SetParent(_cameraPivot);
-
             _previewScene.OnDrawHandles += DrawHandles;
 
-            Frame();
+            _meshPreviewSettings = new MeshPreviewSettings();
+
+            _previewSceneMotion = new PreviewSceneMotion(_previewScene);
+            _previewSceneMotion.TargetBounds = CalculateBounds();
+            _previewSceneMotion.Frame();
 
             var filters = _sourceGO.GetComponentsInChildren<MeshFilter>();
             List<Mesh> meshes = new List<Mesh>();
@@ -86,9 +105,18 @@ namespace ZeludeEditor
             _meshes = meshes.ToArray();
             _normals = _meshes[0].normals;
             _vertices = _meshes[0].vertices;
+            _tangents = _meshes[0].tangents;
+            _triangles = _meshes[0].triangles;
+            _binormals = new Vector3[_normals.Length];
+            for (int i = 0; i < _binormals.Length; i++)
+            {
+                _binormals[i] = Vector3.Cross(_normals[i], _tangents[i]) * _tangents[i].w;
+            }
 
             var shader = Shader.Find("Zelude/Handles Lines");
             _handleMat = new Material(shader);
+            _handleMat.SetInt("_HandleZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
+            _handleMat.hideFlags = HideFlags.HideAndDontSave;
 
             _registeredEditors.Add(_guidString, this);
         }
@@ -119,74 +147,36 @@ namespace ZeludeEditor
         private void OnGUI()
         {
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
-            GUILayout.Toggle(false, EditorGUIUtility.TrIconContent("SceneViewTools", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, EditorGUIUtility.TrTextContent("Vertex", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, EditorGUIUtility.TrTextContent("Normal", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, EditorGUIUtility.TrTextContent("Tangent", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
+            _meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, EditorGUIUtility.TrTextContent("Binormal", "Hide or show the Component Editor Tools panel in the Scene view."), EditorStyles.toolbarButton);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 
-            var viewportRect = GUILayoutUtility.GetRect(400, 1000);
+            var viewportRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true));
 
-            var current = Event.current;
+            _previewSceneMotion.DoOnGUI(viewportRect);
 
-            if (current.type == EventType.MouseDrag && current.button == 0)
-            {
-                _cameraRotation = Quaternion.AngleAxis(current.delta.y * 0.003f * 57.29578f, _cameraRotation * Vector3.right) * _cameraRotation;
-                _cameraRotation = Quaternion.AngleAxis(current.delta.x * 0.003f * 57.29578f, Vector3.up) * _cameraRotation;
-                _cameraPivot.rotation = _cameraRotation;
-                Event.current.Use();
-            }
+            _previewScene.OnGUI(viewportRect);
 
-            if (Tools.viewTool == ViewTool.Pan)
-            {
-                if (current.type == EventType.MouseDrag && current.button == 2)
-                {
-                    Vector3 GetWorldPoint(Vector2 guiPosition)
-                    {
-                        var plane = new Plane(-Camera.transform.forward, _cameraDistance);
-                        var screenPoint = Rect.PointToNormalized(viewportRect, guiPosition);
-                        screenPoint.y = 1 - screenPoint.y;
-                        var ray = Camera.ViewportPointToRay(screenPoint);
-                        plane.Raycast(ray, out float enter);
-                        return ray.GetPoint(enter);
-                    }
-
-                    var prevPoint = GetWorldPoint(current.mousePosition - current.delta);
-                    var newPoint = GetWorldPoint(current.mousePosition);
-
-                    // Use this if something gets sketchy on bigger displays?
-                    //EditorGUIUtility.pixelsPerPoint;
-
-                    _cameraPivot.transform.position += (prevPoint - newPoint);
-
-                    Event.current.Use();
-                }
-            }
-
-            if (current.type == EventType.ScrollWheel)
-            {
-                _cameraDistance += _cameraDistance * current.delta.y * 0.015f * 3f;
-                UpdateCameraDistance();
-                Event.current.Use();
-            }
-
-            if (current.type == EventType.KeyDown && current.keyCode == KeyCode.F)
-            {
-                Frame();
-            }
-
-            _previewScene.Render(viewportRect);
+            var testRect = new Rect(10, 30, 200, 200);
+            GUI.BeginGroup(viewportRect);
+            BeginWindows();
+            GUILayout.Window(0, new Rect(10, 10, 200, 200), somefunc, GUIContent.none, GUIStyle.none);
+            EndWindows();
+            GUI.EndGroup();
         }
 
-        private void UpdateCameraDistance()
+        private void somefunc(int id)
         {
-            _previewScene.Camera.transform.localPosition = new Vector3(0, 0, -_cameraDistance);
-        }
-
-        private void Frame()
-        {
-            var bounds = CalculateBounds();
-            _cameraDistance = bounds.extents.magnitude * 3f;
-            _cameraPivot.transform.position = bounds.center;
-            UpdateCameraDistance();
+            //GUILayout.Label($"Vertices: {_vertices.Length}");
+            var vertexGuiContent = EditorGUIUtility.TrTextContent(string.Format("Vertices: {0:n0}", _vertices.Length));
+            var trianglesGuiContent = EditorGUIUtility.TrTextContent(string.Format("Traingles: {0:n0}", _triangles.Length / 3));
+            var rect = GUILayoutUtility.GetRect(vertexGuiContent, Styles.DropShadowLabel);
+            EditorGUI.DropShadowLabel(rect, vertexGuiContent, Styles.DropShadowLabel);
+            var newRect = GUILayoutUtility.GetRect(trianglesGuiContent, Styles.DropShadowLabel);
+            EditorGUI.DropShadowLabel(newRect, trianglesGuiContent, Styles.DropShadowLabel);
         }
 
         private Bounds CalculateBounds()
@@ -202,14 +192,79 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
+            if (_meshPreviewSettings.ShowNormals) DrawNormals();
+            if (_meshPreviewSettings.ShowVertices) DrawVertices();
+            if (_meshPreviewSettings.ShowTangents) DrawTangents();
+            if (_meshPreviewSettings.ShowBinormals) DrawBinormals();
+        }
+
+        private void DrawNormals()
+        {
             _handleMat.SetPass(0);
-            _handleMat.SetInt("_HandleZTest", (int) UnityEngine.Rendering.CompareFunction.LessEqual);
             GL.Begin(GL.LINES);
             GL.Color(Color.red);
             for (int i = 0; i < _vertices.Length; i++)
             {
                 GL.Vertex(_vertices[i]);
-                GL.Vertex(_vertices[i] + _normals[i] * 0.003f);
+                GL.Vertex(_vertices[i] + _normals[i] * 0.005f);
+            }
+            GL.End();
+        }
+
+        private void DrawVertices()
+        {
+            _handleMat.SetPass(0);
+            void DrawVertex(Vector3 position)
+            {
+                float size = GetVertexHandleSize(position, _previewScene.Camera);
+                GL.PushMatrix();
+                GL.MultMatrix(Matrix4x4.TRS(position, Quaternion.LookRotation(_previewScene.Camera.transform.forward), new Vector3(size, size, size)));
+                GL.Begin(GL.LINE_STRIP);
+                GL.Color(Color.green);
+                GL.Vertex(new Vector3(-0.5f,-0.5f));
+                GL.Vertex(new Vector3(-0.5f, 0.5f));
+                GL.Vertex(new Vector3( 0.5f, 0.5f));
+                GL.Vertex(new Vector3( 0.5f,-0.5f));
+                GL.Vertex(new Vector3(-0.5f, -0.5f));
+                GL.End();
+                GL.PopMatrix();
+            }
+
+            for (int i = 0; i < _vertices.Length; i++)
+            {
+                DrawVertex(_vertices[i]);
+            }
+        }
+
+        public static float GetVertexHandleSize(Vector3 position, Camera camera)
+        {
+            Vector3 diff = camera.transform.position - position;
+            var inv = Mathf.InverseLerp(0.05f, 0.5f, diff.magnitude);
+            return Mathf.Lerp(0.001f, 0.005f, inv);
+        }
+
+        private void DrawTangents()
+        {
+            _handleMat.SetPass(0);
+            GL.Begin(GL.LINES);
+            GL.Color(Color.blue);
+            for (int i = 0; i < _tangents.Length; i++)
+            {
+                GL.Vertex(_vertices[i]);
+                GL.Vertex(_vertices[i] + (Vector3) _tangents[i] * 0.005f);
+            }
+            GL.End();
+        }
+
+        private void DrawBinormals()
+        {
+            _handleMat.SetPass(0);
+            GL.Begin(GL.LINES);
+            GL.Color(Color.yellow);
+            for (int i = 0; i < _binormals.Length; i++)
+            {
+                GL.Vertex(_vertices[i]);
+                GL.Vertex(_vertices[i] + _binormals[i] * 0.005f);
             }
             GL.End();
         }
