@@ -81,7 +81,7 @@ namespace ZeludeEditor
             }
             else
             {
-                var window = CreateWindow<MeshPreviewEditorWindow>(new System.Type[] { typeof(SceneView), typeof(MeshPreviewEditorWindow) });
+                var window = CreateWindow<MeshPreviewEditorWindow>(new System.Type[] { typeof(MeshPreviewEditorWindow), typeof(SceneView) });
                 window._guidString = guidString;
                 window.Initialize();
                 window.Focus();
