@@ -23,6 +23,7 @@ namespace ZeludeEditor
         private PreviewScene _previewScene;
         private MeshGroup _meshGroup;
         private Material _handleMat;
+        private RenderTexture _uvTexture;
 
         [SerializeField]
         private PreviewSceneMotion _previewSceneMotion;
@@ -144,6 +145,7 @@ namespace ZeludeEditor
         {
             if (_previewScene != null) _previewScene.Dispose();
             _registeredEditors.Remove(_guidString);
+            if (_uvTexture != null) DestroyImmediate(_uvTexture);
             //if (_modelImporterEditor != null) DestroyImmediate(_modelImporterEditor);
         }
 
@@ -191,21 +193,22 @@ namespace ZeludeEditor
             DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount()));
         }
 
-        private RenderTexture _renderTexture;
-
         private void DrawUVsGUI(int id)
         {
-            if (_renderTexture == null) _renderTexture = CreateRenderTexture(400, 400);
+            if (_uvTexture == null) _uvTexture = CreateRenderTexture(400, 400);
             var rect = GUILayoutUtility.GetRect(400, 400);
             //EditorGUI.DrawPreviewTexture(rect, _renderTexture);
-            Graphics.DrawTexture(rect, _renderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color);
+            Graphics.DrawTexture(rect, _uvTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color);
         }
 
         private RenderTexture CreateRenderTexture(int width, int height)
         {
-            RenderTexture texture = new RenderTexture(width, height, 24, SystemInfo.GetGraphicsFormat(DefaultFormat.LDR));
+            RenderTexture renderTexture = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+            renderTexture.hideFlags = HideFlags.HideAndDontSave;
+            renderTexture.antiAliasing = 1;
+            renderTexture.autoGenerateMips = false;
             var prevTexture = RenderTexture.active;
-            RenderTexture.active = texture;
+            RenderTexture.active = renderTexture;
 
             Vector2 multiplier = new Vector2(width, height);
 
@@ -250,7 +253,7 @@ namespace ZeludeEditor
             GL.PopMatrix();
 
             RenderTexture.active = prevTexture;
-            return texture;
+            return renderTexture;
         }
 
         private void DrawInfoLine(string label, string text)
