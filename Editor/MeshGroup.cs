@@ -140,6 +140,7 @@ namespace ZeludeEditor
         public MeshInfo(MeshFilter meshFilter)
         {
             MeshFilter = meshFilter;
+            MeshRenderer = meshFilter.GetComponent<MeshRenderer>();
             var mesh = meshFilter.sharedMesh;
             SubMeshCount = mesh.subMeshCount;
 

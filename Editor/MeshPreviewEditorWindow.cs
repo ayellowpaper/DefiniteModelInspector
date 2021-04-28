@@ -11,6 +11,8 @@ namespace ZeludeEditor
         [SerializeField]
         private string _guidString;
 
+        const float GizmoLineLength = 0.02f;
+
         private string _assetPath;
         private GameObject _sourceGO;
         private GameObject _previewGO;
@@ -18,7 +20,6 @@ namespace ZeludeEditor
         private ModelImporter _modelImporter;
         private Editor _modelImporterEditor;
         private PreviewScene _previewScene;
-        private Mesh[] _meshes;
         private MeshGroup _meshGroup;
         private Material _handleMat;
 
@@ -229,7 +230,7 @@ namespace ZeludeEditor
             {
                 normals.MoveNext();
                 GL.Vertex(vertices.Current);
-                GL.Vertex(vertices.Current + normals.Current * 0.005f);
+                GL.Vertex(vertices.Current + normals.Current * GizmoLineLength);
             }
             GL.End();
         }
@@ -279,7 +280,7 @@ namespace ZeludeEditor
             {
                 tangents.MoveNext();
                 GL.Vertex(vertices.Current);
-                GL.Vertex(vertices.Current + tangents.Current * 0.005f);
+                GL.Vertex(vertices.Current + tangents.Current * GizmoLineLength);
             }
             GL.End();
         }
@@ -296,7 +297,7 @@ namespace ZeludeEditor
             {
                 binormals.MoveNext();
                 GL.Vertex(vertices.Current);
-                GL.Vertex(vertices.Current + binormals.Current * 0.005f);
+                GL.Vertex(vertices.Current + binormals.Current * GizmoLineLength);
             }
             GL.End();
         }
