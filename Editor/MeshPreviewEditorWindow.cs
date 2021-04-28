@@ -19,11 +19,7 @@ namespace ZeludeEditor
         private Editor _modelImporterEditor;
         private PreviewScene _previewScene;
         private Mesh[] _meshes;
-        private Vector3[] _vertices;
-        private Vector3[] _normals;
-        private Vector3[] _binormals;
-        private Vector4[] _tangents;
-        private int[] _triangles;
+        private MeshGroup _meshGroup;
         private Material _handleMat;
 
         [SerializeField]
@@ -119,24 +115,9 @@ namespace ZeludeEditor
             _previewSceneMotion.TargetBounds = bounds;
             _previewSceneMotion.Frame();
 
-                        _floor.SetActive(_meshPreviewSettings.ShowFloor);
+            _meshGroup = new MeshGroup(_previewGO);
 
-            var filters = _sourceGO.GetComponentsInChildren<MeshFilter>();
-            List<Mesh> meshes = new List<Mesh>();
-            foreach (var filter in filters)
-            {
-                meshes.Add(filter.sharedMesh);
-            }
-            _meshes = meshes.ToArray();
-            _normals = _meshes[0].normals;
-            _vertices = _meshes[0].vertices;
-            _tangents = _meshes[0].tangents;
-            _triangles = _meshes[0].triangles;
-            _binormals = new Vector3[_normals.Length];
-            for (int i = 0; i < _binormals.Length; i++)
-            {
-                _binormals[i] = Vector3.Cross(_normals[i], _tangents[i]) * _tangents[i].w;
-            }
+            _floor.SetActive(_meshPreviewSettings.ShowFloor);
 
             var shader = Shader.Find("Zelude/Handles Lines");
             _handleMat = new Material(shader);
@@ -203,8 +184,9 @@ namespace ZeludeEditor
 
         private void MeshDetailsGUI(int id)
         {
-            DrawInfoLine("Vertices", string.Format("{0:n0}/{0:n0}", _vertices.Length));
-            DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _triangles.Length / 3));
+            DrawInfoLine("Objects", string.Format("{0:n0}/{0:n0}", _meshGroup.MeshInfos.Length));
+            DrawInfoLine("Vertices", string.Format("{0:n0}/{0:n0}", _meshGroup.GetVertexCount()));
+            DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount()));
         }
 
         private void DrawInfoLine(string label, string text)
@@ -240,10 +222,14 @@ namespace ZeludeEditor
             _handleMat.SetPass(0);
             GL.Begin(GL.LINES);
             GL.Color(Color.red);
-            for (int i = 0; i < _vertices.Length; i++)
+            var vertices = _meshGroup.GetVertexEnumerator();
+            var normals = _meshGroup.GetNormalsEnumerator();
+
+            while (vertices.MoveNext())
             {
-                GL.Vertex(_vertices[i]);
-                GL.Vertex(_vertices[i] + _normals[i] * 0.005f);
+                normals.MoveNext();
+                GL.Vertex(vertices.Current);
+                GL.Vertex(vertices.Current + normals.Current * 0.005f);
             }
             GL.End();
         }
@@ -267,9 +253,10 @@ namespace ZeludeEditor
                 GL.PopMatrix();
             }
 
-            for (int i = 0; i < _vertices.Length; i++)
+            var vertices = _meshGroup.GetVertexEnumerator();
+            while (vertices.MoveNext())
             {
-                DrawVertex(_vertices[i]);
+                DrawVertex(vertices.Current);
             }
         }
 
@@ -285,10 +272,14 @@ namespace ZeludeEditor
             _handleMat.SetPass(0);
             GL.Begin(GL.LINES);
             GL.Color(Color.blue);
-            for (int i = 0; i < _tangents.Length; i++)
+            var vertices = _meshGroup.GetVertexEnumerator();
+            var tangents = _meshGroup.GetTangentsEnumerator();
+
+            while (vertices.MoveNext())
             {
-                GL.Vertex(_vertices[i]);
-                GL.Vertex(_vertices[i] + (Vector3) _tangents[i] * 0.005f);
+                tangents.MoveNext();
+                GL.Vertex(vertices.Current);
+                GL.Vertex(vertices.Current + tangents.Current * 0.005f);
             }
             GL.End();
         }
@@ -298,10 +289,14 @@ namespace ZeludeEditor
             _handleMat.SetPass(0);
             GL.Begin(GL.LINES);
             GL.Color(Color.yellow);
-            for (int i = 0; i < _binormals.Length; i++)
+            var vertices = _meshGroup.GetVertexEnumerator();
+            var binormals = _meshGroup.GetBinormalsEnumerator();
+
+            while (vertices.MoveNext())
             {
-                GL.Vertex(_vertices[i]);
-                GL.Vertex(_vertices[i] + _binormals[i] * 0.005f);
+                binormals.MoveNext();
+                GL.Vertex(vertices.Current);
+                GL.Vertex(vertices.Current + binormals.Current * 0.005f);
             }
             GL.End();
         }
