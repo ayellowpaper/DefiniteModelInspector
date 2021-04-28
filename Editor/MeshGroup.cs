@@ -122,6 +122,7 @@ namespace ZeludeEditor
         public readonly Vector3[] Binormals;
 
         private List<List<int>> _submeshIndices;
+        private List<List<Vector2>> _uvs;
 
         private bool _isVisible = true;
         private bool[] _visibleSubmeshes;
@@ -152,6 +153,14 @@ namespace ZeludeEditor
                 Tangents[i] = tangents[i];
                 Binormals[i] = Vector3.Cross(Normals[i], tangents[i]) * tangents[i].w;
             }
+
+            _uvs = new List<List<Vector2>>(8);
+            List<Vector2> _temporaryList = new List<Vector2>(Vertices.Length);
+            for (int i = 0; i < 8; i++)
+            {
+                mesh.GetUVs(i, _temporaryList);
+                _uvs.Add(new List<Vector2>(_temporaryList));
+            }
         }
 
         public static bool CreateFromRenderer(Renderer renderer, out MeshInfo meshInfo)
@@ -170,19 +179,10 @@ namespace ZeludeEditor
             return false;
         }
 
-        public void SetSubmeshVisible(int submeshIndex, bool flag)
-        {
-            _visibleSubmeshes[submeshIndex] = flag;
-        }
-
-        public bool IsSubmeshVisible(int submeshIndex)
-        {
-            return _visibleSubmeshes[submeshIndex];
-        }
-
-        public List<int> GetSubmeshVertexIndices(int index)
-        {
-            return _submeshIndices[index];
-        }
+        public void SetSubmeshVisible(int submeshIndex, bool flag) => _visibleSubmeshes[submeshIndex] = flag;
+        public bool IsSubmeshVisible(int submeshIndex) =>_visibleSubmeshes[submeshIndex];
+        public IReadOnlyList<int> GetSubmeshVertexIndices(int index) => _submeshIndices[index];
+        public IReadOnlyList<Vector2> GetUVs(int channel) => _uvs[channel];
+        public bool HasUVs(int channel) => _uvs[channel].Count > 0;
     }
 }
