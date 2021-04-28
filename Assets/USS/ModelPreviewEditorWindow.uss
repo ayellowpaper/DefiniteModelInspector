@@ -1,0 +1,29 @@
+#viewport-container {
+	flex-grow: 1;
+}
+
+#viewport {
+	flex-grow: 1;
+}
+
+#viewport-stats {
+	position: absolute;
+	left: 10px;
+	top: 10px;
+}
+
+#uv-window {
+	position: absolute;
+	left: 10px;
+	bottom: 10px;
+}
+
+#uv-image {
+	background-color: #FFFFFF;
+	width: 400px;
+	height: 400px;
+}
+
+Toolbar {
+	height: 22px;
+}

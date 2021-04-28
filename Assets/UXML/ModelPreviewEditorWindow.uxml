@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+>
+  <Style src="../USS/ModelPreviewEditorWindow.uss" />
+  <editor:Toolbar>
+    <editor:ToolbarToggle text="Vertices"></editor:ToolbarToggle>
+    <editor:ToolbarToggle text="Normals"></editor:ToolbarToggle>
+    <editor:ToolbarToggle text="Tangents"></editor:ToolbarToggle>
+    <editor:ToolbarToggle text="Binormals"></editor:ToolbarToggle>
+    <editor:ToolbarSpacer></editor:ToolbarSpacer>
+    <editor:ToolbarToggle>
+      <engine:Image class="grid-image"/>
+    </editor:ToolbarToggle>
+    <editor:ToolbarToggle>
+      <engine:Image class="floor-image"/>
+    </editor:ToolbarToggle>
+  </editor:Toolbar>
+  <engine:VisualElement name="viewport-container">
+    <engine:IMGUIContainer name="viewport"/>
+    <engine:VisualElement name="viewport-stats">
+      <engine:Label text="Vertices"/>
+    </engine:VisualElement>
+    <engine:VisualElement name="uv-window">
+      <engine:Image name="uv-image"/>
+    </engine:VisualElement>
+  </engine:VisualElement>
+</engine:UXML>

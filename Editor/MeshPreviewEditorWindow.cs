@@ -53,7 +53,7 @@ namespace ZeludeEditor
                 ToggleTangentsContent = EditorGUIUtility.TrTextContent("Tangents", "");
                 ToggleBinormalsContent = EditorGUIUtility.TrTextContent("Binormals", "");
                 ToggleGridContent = EditorGUIUtility.TrIconContent("GridAxisY", "");
-                ToggleFloorContent = EditorGUIUtility.TrIconContent(Resources.Load<Texture>("MEshPreview/Floor"), "");
+                ToggleFloorContent = EditorGUIUtility.TrIconContent(Resources.Load<Texture>("MeshPreview/Floor"), "");
             }
         }
 
