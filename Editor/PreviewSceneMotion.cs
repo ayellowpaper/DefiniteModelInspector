@@ -11,7 +11,7 @@ namespace ZeludeEditor
         [SerializeField]
         public float CameraDistance = 5f;
         [SerializeField]
-        public Quaternion PivotRotation = Quaternion.Euler(25f, 200f, 0);
+        public Quaternion PivotRotation = Quaternion.Euler(25f, 290f, 0);
         [SerializeField]
         public Vector3 PivotPosition = Vector3.zero;
         public readonly PreviewScene PreviewScene;

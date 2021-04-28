@@ -39,7 +39,7 @@ namespace ZeludeEditor
             var light = new GameObject().AddComponent<Light>();
             AddGameObject(light.gameObject);
             light.type = LightType.Directional;
-            light.transform.rotation = Quaternion.Euler(45, 130, 90);
+            light.transform.rotation = Quaternion.Euler(45, 240, 90);
             light.shadows = LightShadows.Soft;
             light.color = new Color(1, 244/255f, 214/255f);
             light.intensity = 2f;

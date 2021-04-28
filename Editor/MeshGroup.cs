@@ -13,12 +13,12 @@ namespace ZeludeEditor
 
         public MeshGroup(GameObject objectRoot)
         {
-            var filters = objectRoot.GetComponentsInChildren<MeshFilter>();
+            var renderers = objectRoot.GetComponentsInChildren<Renderer>();
             List<MeshInfo> meshInfos = new List<MeshInfo>();
-            foreach (var filter in filters)
+            foreach (var renderer in renderers)
             {
-                var meshInfo = new MeshInfo(filter);
-                meshInfos.Add(meshInfo);
+                if (MeshInfo.CreateFromRenderer(renderer, out MeshInfo meshInfo))
+                    meshInfos.Add(meshInfo);
             }
             MeshInfos = meshInfos.ToArray();
         }
@@ -54,7 +54,7 @@ namespace ZeludeEditor
             {
                 foreach (var data in meshInfo.Tangents)
                 {
-                    yield return meshInfo.MeshFilter.transform.TransformPoint(data);
+                    yield return meshInfo.Transform.TransformPoint(data);
                 }
             }
         }
@@ -70,7 +70,7 @@ namespace ZeludeEditor
             {
                 foreach (var data in func(meshInfo))
                 {
-                    yield return meshInfo.MeshFilter.transform.TransformPoint(data);
+                    yield return meshInfo.Transform.TransformPoint(data);
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace ZeludeEditor
             {
                 foreach (var data in func(meshInfo))
                 {
-                    yield return meshInfo.MeshFilter.transform.TransformDirection(data);
+                    yield return meshInfo.Transform.TransformDirection(data);
                 }
             }
         }
@@ -118,14 +118,14 @@ namespace ZeludeEditor
             set {
                 if (_isVisible == value) return;
                 _isVisible = value;
-                MeshRenderer.enabled = _isVisible;
+                Renderer.enabled = _isVisible;
             }
         }
 
         public IReadOnlyList<IReadOnlyList<int>> SubmeshIndices => _submeshIndices;
 
-        public readonly MeshFilter MeshFilter;
-        public readonly MeshRenderer MeshRenderer;
+        public Transform Transform => Renderer.transform;
+        public readonly Renderer Renderer;
         public readonly int SubMeshCount;
         public readonly int[] Triangles;
         public readonly Vector3[] Vertices;
@@ -137,11 +137,9 @@ namespace ZeludeEditor
 
         private bool _isVisible = true;
 
-        public MeshInfo(MeshFilter meshFilter)
+        public MeshInfo(Renderer renderer, Mesh mesh)
         {
-            MeshFilter = meshFilter;
-            MeshRenderer = meshFilter.GetComponent<MeshRenderer>();
-            var mesh = meshFilter.sharedMesh;
+            Renderer = renderer;
             SubMeshCount = mesh.subMeshCount;
 
             List<int> tris = new List<int>();
@@ -162,6 +160,22 @@ namespace ZeludeEditor
             {
                 Binormals[i] = Vector3.Cross(Normals[i], Tangents[i]) * Tangents[i].w;
             }
+        }
+
+        public static bool CreateFromRenderer(Renderer renderer, out MeshInfo meshInfo)
+        {
+            if (renderer is MeshRenderer)
+            {
+                meshInfo = new MeshInfo(renderer, renderer.GetComponent<MeshFilter>().sharedMesh);
+                return true;
+            }
+            else if (renderer is SkinnedMeshRenderer smr)
+            {
+                meshInfo = new MeshInfo(renderer, smr.sharedMesh);
+                return true;
+            }
+            meshInfo = null;
+            return false;
         }
 
         public List<int> GetSubmeshVertexIndices(int index)
