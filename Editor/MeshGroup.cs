@@ -50,13 +50,7 @@ namespace ZeludeEditor
 
         public IEnumerator<Vector3> GetTangentsEnumerator()
         {
-            foreach (var meshInfo in MeshInfos)
-            {
-                foreach (var data in meshInfo.Tangents)
-                {
-                    yield return meshInfo.Transform.TransformPoint(data);
-                }
-            }
+            return GetDirectionEnumerator(x => x.Tangents);
         }
 
         public IEnumerator<Vector3> GetBinormalsEnumerator()
@@ -64,10 +58,12 @@ namespace ZeludeEditor
             return GetDirectionEnumerator(x => x.Binormals);
         }
 
-        private IEnumerator<Vector3> GetPositionEnumerator(Func<MeshInfo, IList<Vector3>> func)
+        private IEnumerator<Vector3> GetPositionEnumerator(Func<MeshInfo, IList<Vector3>> func, bool onlyVisible = true)
         {
             foreach (var meshInfo in MeshInfos)
             {
+                if (onlyVisible && !meshInfo.IsVisible) continue;
+
                 foreach (var data in func(meshInfo))
                 {
                     yield return meshInfo.Transform.TransformPoint(data);
@@ -75,24 +71,15 @@ namespace ZeludeEditor
             }
         }
 
-        private IEnumerator<Vector3> GetDirectionEnumerator(Func<MeshInfo, IList<Vector3>> func)
+        private IEnumerator<Vector3> GetDirectionEnumerator(Func<MeshInfo, IList<Vector3>> func, bool onlyVisible = true)
         {
             foreach (var meshInfo in MeshInfos)
             {
+                if (onlyVisible && !meshInfo.IsVisible) continue;
+
                 foreach (var data in func(meshInfo))
                 {
                     yield return meshInfo.Transform.TransformDirection(data);
-                }
-            }
-        }
-
-        private IEnumerator<T> GetMeshDataEnumerator<T>(Func<MeshInfo, IList<T>> func)
-        {
-            foreach (var meshInfo in MeshInfos)
-            {
-                foreach (var data in func(meshInfo))
-                {
-                    yield return data;
                 }
             }
         }
@@ -123,6 +110,7 @@ namespace ZeludeEditor
         }
 
         public IReadOnlyList<IReadOnlyList<int>> SubmeshIndices => _submeshIndices;
+        public IReadOnlyList<bool> VisibleSubmeshes => _visibleSubmeshes;
 
         public Transform Transform => Renderer.transform;
         public readonly Renderer Renderer;
@@ -130,17 +118,19 @@ namespace ZeludeEditor
         public readonly int[] Triangles;
         public readonly Vector3[] Vertices;
         public readonly Vector3[] Normals;
-        public readonly Vector4[] Tangents;
+        public readonly Vector3[] Tangents;
         public readonly Vector3[] Binormals;
 
         private List<List<int>> _submeshIndices;
 
         private bool _isVisible = true;
+        private bool[] _visibleSubmeshes;
 
         public MeshInfo(Renderer renderer, Mesh mesh)
         {
             Renderer = renderer;
             SubMeshCount = mesh.subMeshCount;
+            _visibleSubmeshes = new bool[SubMeshCount];
 
             List<int> tris = new List<int>();
             _submeshIndices = new List<List<int>>(SubMeshCount);
@@ -153,12 +143,14 @@ namespace ZeludeEditor
             Triangles = mesh.triangles;
             Vertices = mesh.vertices;
             Normals = mesh.normals;
-            Tangents = mesh.tangents;
+            var tangents = mesh.tangents;
+            Tangents = new Vector3[tangents.Length];
             Binormals = new Vector3[Normals.Length];
 
             for (int i = 0; i < Normals.Length; i++)
             {
-                Binormals[i] = Vector3.Cross(Normals[i], Tangents[i]) * Tangents[i].w;
+                Tangents[i] = tangents[i];
+                Binormals[i] = Vector3.Cross(Normals[i], tangents[i]) * tangents[i].w;
             }
         }
 
@@ -176,6 +168,16 @@ namespace ZeludeEditor
             }
             meshInfo = null;
             return false;
+        }
+
+        public void SetSubmeshVisible(int submeshIndex, bool flag)
+        {
+            _visibleSubmeshes[submeshIndex] = flag;
+        }
+
+        public bool IsSubmeshVisible(int submeshIndex)
+        {
+            return _visibleSubmeshes[submeshIndex];
         }
 
         public List<int> GetSubmeshVertexIndices(int index)
