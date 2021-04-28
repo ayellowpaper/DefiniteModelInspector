@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
+using UnityEngine.Experimental.Rendering;
 
 namespace ZeludeEditor
 {
@@ -175,10 +176,10 @@ namespace ZeludeEditor
 
             _previewScene.OnGUI(viewportRect);
 
-            var testRect = new Rect(10, 30, 200, 200);
             GUI.BeginGroup(viewportRect);
             BeginWindows();
             GUILayout.Window(0, new Rect(10, 10, 200, 200), MeshDetailsGUI, GUIContent.none, GUIStyle.none);
+            GUI.Window(1, new Rect(10, viewportRect.height - 410, 400, 400), DrawUVsGUI, GUIContent.none, GUIStyle.none);
             EndWindows();
             GUI.EndGroup();
         }
@@ -188,6 +189,68 @@ namespace ZeludeEditor
             DrawInfoLine("Objects", string.Format("{0:n0}/{0:n0}", _meshGroup.MeshInfos.Length));
             DrawInfoLine("Vertices", string.Format("{0:n0}/{0:n0}", _meshGroup.GetVertexCount()));
             DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount()));
+        }
+
+        private RenderTexture _renderTexture;
+
+        private void DrawUVsGUI(int id)
+        {
+            if (_renderTexture == null) _renderTexture = CreateRenderTexture(400, 400);
+            var rect = GUILayoutUtility.GetRect(400, 400);
+            //EditorGUI.DrawPreviewTexture(rect, _renderTexture);
+            Graphics.DrawTexture(rect, _renderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color);
+        }
+
+        private RenderTexture CreateRenderTexture(int width, int height)
+        {
+            RenderTexture texture = new RenderTexture(width, height, 24, SystemInfo.GetGraphicsFormat(DefaultFormat.LDR));
+            var prevTexture = RenderTexture.active;
+            RenderTexture.active = texture;
+
+            Vector2 multiplier = new Vector2(width, height);
+
+            GL.Clear(true, true, new Color(1, 1, 1, 0));
+
+            GL.PushMatrix();
+            GL.modelview = Matrix4x4.TRS(new Vector3(0, 0, -1), Quaternion.Euler(0, 0, 0), Vector3.one);
+            GL.LoadProjectionMatrix(Matrix4x4.Ortho(0, 1, 0, 1, 0.01f, 10f));
+
+            _handleMat.SetPass(0);
+            GL.Begin(GL.LINES);
+            GL.Color(Color.white);
+
+            foreach (var meshInfo in _meshGroup.MeshInfos)
+            {
+                if (!meshInfo.IsVisible) continue;
+
+                var tris = meshInfo.Triangles;
+                var availableChannels = meshInfo.GetAvailableUVChannels();
+                foreach (var channel in availableChannels)
+                {
+                    var uvs = meshInfo.GetUVs(channel);
+                    for (int i = 0; i < tris.Length; i += 3)
+                    {
+                        int i0 = i;
+                        int i1 = i + 1;
+                        int i2 = i + 2;
+                        GL.Vertex(uvs[tris[i0]]);
+                        GL.Vertex(uvs[tris[i1]]);
+
+                        GL.Vertex(uvs[tris[i1]]);
+                        GL.Vertex(uvs[tris[i2]]);
+
+                        GL.Vertex(uvs[tris[i2]]);
+                        GL.Vertex(uvs[tris[i0]]);
+                    }
+                }
+            }
+
+            GL.End();
+
+            GL.PopMatrix();
+
+            RenderTexture.active = prevTexture;
+            return texture;
         }
 
         private void DrawInfoLine(string label, string text)

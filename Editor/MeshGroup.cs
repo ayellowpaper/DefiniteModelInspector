@@ -179,10 +179,26 @@ namespace ZeludeEditor
             return false;
         }
 
+        public List<int> GetVisibleSubmeshIndices()
+        {
+            List<int> visibleIndices = new List<int>(_visibleSubmeshes.Length);
+            for (int i = 0; i < _visibleSubmeshes.Length; i++)
+                if (_visibleSubmeshes[i])
+                    visibleIndices.Add(i);
+            return visibleIndices;
+        }
+        public List<int> GetAvailableUVChannels()
+        {
+            List<int> availableChannels = new List<int>(_uvs.Count);
+            for (int i = 0; i < _uvs.Count; i++)
+                if (HasUVChannel(i))
+                    availableChannels.Add(i);
+            return availableChannels;
+        }
         public void SetSubmeshVisible(int submeshIndex, bool flag) => _visibleSubmeshes[submeshIndex] = flag;
         public bool IsSubmeshVisible(int submeshIndex) =>_visibleSubmeshes[submeshIndex];
         public IReadOnlyList<int> GetSubmeshVertexIndices(int index) => _submeshIndices[index];
         public IReadOnlyList<Vector2> GetUVs(int channel) => _uvs[channel];
-        public bool HasUVs(int channel) => _uvs[channel].Count > 0;
+        public bool HasUVChannel(int channel) => _uvs[channel].Count > 0;
     }
 }
