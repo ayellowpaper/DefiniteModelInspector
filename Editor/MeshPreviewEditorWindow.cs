@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.UIElements;
+using System.IO;
 
 namespace ZeludeEditor
 {
@@ -94,6 +96,18 @@ namespace ZeludeEditor
 
         private void Initialize()
         {
+            //string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
+            //var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
+            //var uxml = template.Instantiate();
+            //uxml.style.flexGrow = 1;
+
+            //var gridTexture = EditorGUIUtility.LoadRequired("d_GridAxisY") as Texture;
+            //var floorTexture = Resources.Load<Texture>("MeshPreview/Floor");
+            //uxml.Query<Image>(className: "floor-image").ForEach(img => UpdateToolbarImage(img, floorTexture));
+            //uxml.Query<Image>(className: "grid-image").ForEach(img => UpdateToolbarImage(img, gridTexture));
+
+            //rootVisualElement.Add(uxml);
+
             _assetPath = AssetDatabase.GUIDToAssetPath(_guidString);
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
             _modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
@@ -128,6 +142,12 @@ namespace ZeludeEditor
             _handleMat.hideFlags = HideFlags.HideAndDontSave;
 
             _registeredEditors.Add(_guidString, this);
+        }
+
+        private void UpdateToolbarImage(Image image, Texture texture)
+        {
+            image.image = texture;
+            image.scaleMode = ScaleMode.ScaleToFit;
         }
 
         private void OnEnable()
