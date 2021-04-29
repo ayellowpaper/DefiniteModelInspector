@@ -167,6 +167,8 @@ namespace ZeludeEditor
             BindToggle(uxml.Q<BaseField<bool>>("toggle-grid"), () => _meshPreviewSettings.ShowGrid, x => _meshPreviewSettings.ShowGrid = x);
             BindToggle(uxml.Q<BaseField<bool>>("toggle-ground"), () => _meshPreviewSettings.ShowGround, x => _meshPreviewSettings.ShowGround = x);
 
+            uxml.Query(className: "ignore-picking").ForEach(x => x.pickingMode = PickingMode.Ignore);
+
             int width = 400;
             int height = 400;
             if (_uvTexture == null) _uvTexture = CreateRenderTexture(width, height);

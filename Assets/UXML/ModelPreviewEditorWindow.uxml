@@ -20,11 +20,11 @@
   </editor:Toolbar>
   <engine:VisualElement name="viewport-container">
     <engine:IMGUIContainer name="viewport"/>
-    <engine:VisualElement name="viewport-stats">
-      <engine:Label text="Vertices"/>
+    <engine:VisualElement name="viewport-stats" class="ignore-picking">
+      <engine:Label text="Vertices" class="ignore-picking"/>
     </engine:VisualElement>
-    <engine:VisualElement name="uv-window">
-      <engine:Image name="uv-image"/>
+    <engine:VisualElement name="uv-window" class="ignore-picking">
+      <engine:Image name="uv-image" class="ignore-picking"/>
     </engine:VisualElement>
   </engine:VisualElement>
 </engine:UXML>
