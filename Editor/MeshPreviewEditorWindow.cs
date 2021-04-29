@@ -5,7 +5,9 @@ using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.UIElements;
+using UnityEditor.UIElements;
 using System.IO;
+using System;
 
 namespace ZeludeEditor
 {
@@ -19,7 +21,7 @@ namespace ZeludeEditor
         private string _assetPath;
         private GameObject _sourceGO;
         private GameObject _previewGO;
-        private GameObject _floor;
+        private GameObject _ground;
         private ModelImporter _modelImporter;
         private Editor _modelImporterEditor;
         private PreviewScene _previewScene;
@@ -42,7 +44,7 @@ namespace ZeludeEditor
             public static readonly GUIContent ToggleTangentsContent;
             public static readonly GUIContent ToggleBinormalsContent;
             public static readonly GUIContent ToggleGridContent;
-            public static readonly GUIContent ToggleFloorContent;
+            public static readonly GUIContent _toggleGroundContent;
 
             static Styles()
             {
@@ -55,7 +57,7 @@ namespace ZeludeEditor
                 ToggleTangentsContent = EditorGUIUtility.TrTextContent("Tangents", "");
                 ToggleBinormalsContent = EditorGUIUtility.TrTextContent("Binormals", "");
                 ToggleGridContent = EditorGUIUtility.TrIconContent("GridAxisY", "");
-                ToggleFloorContent = EditorGUIUtility.TrIconContent(Resources.Load<Texture>("MeshPreview/Floor"), "");
+                _toggleGroundContent = EditorGUIUtility.TrIconContent(Resources.Load<Texture>("MeshPreview/Ground"), "");
             }
         }
 
@@ -67,7 +69,7 @@ namespace ZeludeEditor
             public bool ShowTangents = false;
             public bool ShowBinormals = false;
             public bool ShowGrid = true;
-            public bool ShowFloor = true;
+            public bool ShowGround = true;
         }
 
         [OnOpenAsset(1)]
@@ -96,18 +98,6 @@ namespace ZeludeEditor
 
         private void Initialize()
         {
-            //string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
-            //var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
-            //var uxml = template.Instantiate();
-            //uxml.style.flexGrow = 1;
-
-            //var gridTexture = EditorGUIUtility.LoadRequired("d_GridAxisY") as Texture;
-            //var floorTexture = Resources.Load<Texture>("MeshPreview/Floor");
-            //uxml.Query<Image>(className: "floor-image").ForEach(img => UpdateToolbarImage(img, floorTexture));
-            //uxml.Query<Image>(className: "grid-image").ForEach(img => UpdateToolbarImage(img, gridTexture));
-
-            //rootVisualElement.Add(uxml);
-
             _assetPath = AssetDatabase.GUIDToAssetPath(_guidString);
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
             _modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
@@ -122,19 +112,19 @@ namespace ZeludeEditor
 
             var bounds = CalculateBounds(_previewGO);
 
-            _floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            _previewScene.AddGameObject(_floor);
-            _floor.transform.position = new Vector3(0, bounds.center.y - bounds.extents.y, 0);
-
-            _meshPreviewSettings = new MeshPreviewSettings();
+            _ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            _previewScene.AddGameObject(_ground);
+            _ground.transform.position = new Vector3(0, bounds.center.y - bounds.extents.y, 0);
 
             _previewSceneMotion = new PreviewSceneMotion(_previewScene);
             _previewSceneMotion.TargetBounds = bounds;
             _previewSceneMotion.Frame();
 
+            _meshPreviewSettings = new MeshPreviewSettings();
+
             _meshGroup = new MeshGroup(_previewGO);
 
-            _floor.SetActive(_meshPreviewSettings.ShowFloor);
+            _ground.SetActive(_meshPreviewSettings.ShowGround);
 
             var shader = Shader.Find("Zelude/Handles Lines");
             _handleMat = new Material(shader);
@@ -142,12 +132,61 @@ namespace ZeludeEditor
             _handleMat.hideFlags = HideFlags.HideAndDontSave;
 
             _registeredEditors.Add(_guidString, this);
+
+            // CREATE UXML HERE
+            string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
+            var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
+            var uxml = template.Instantiate();
+            uxml.style.flexGrow = 1;
+
+            void BindToggle(BaseField<bool> toggle, Func<bool> getter, Action<bool> setter)
+            {
+                toggle.value = getter();
+                toggle.RegisterValueChangedCallback(x => setter(x.newValue));
+            }
+
+            void UpdateToolbarImage(Image image, Texture texture)
+            {
+                image.image = texture;
+                image.scaleMode = ScaleMode.ScaleToFit;
+            }
+
+            var gridTexture = EditorGUIUtility.LoadRequired("d_GridAxisY") as Texture;
+            var groundTexture = Resources.Load<Texture>("MeshPreview/Ground");
+            uxml.Query<Image>(className: "ground-image").ForEach(img => UpdateToolbarImage(img, groundTexture));
+            uxml.Query<Image>(className: "grid-image").ForEach(img => UpdateToolbarImage(img, gridTexture));
+            var imguiViewport = uxml.Q<IMGUIContainer>(name: "viewport");
+            imguiViewport.contextType = ContextType.Editor;
+            imguiViewport.onGUIHandler = OnViewportGUI;
+
+            BindToggle(uxml.Q<BaseField<bool>>("toggle-vertices"), () => _meshPreviewSettings.ShowVertices, x => _meshPreviewSettings.ShowVertices = x);
+            BindToggle(uxml.Q<BaseField<bool>>("toggle-normals"), () => _meshPreviewSettings.ShowNormals, x => _meshPreviewSettings.ShowNormals = x);
+            BindToggle(uxml.Q<BaseField<bool>>("toggle-tangents"), () => _meshPreviewSettings.ShowTangents, x => _meshPreviewSettings.ShowTangents = x);
+            BindToggle(uxml.Q<BaseField<bool>>("toggle-binormals"), () => _meshPreviewSettings.ShowBinormals, x => _meshPreviewSettings.ShowBinormals = x);
+
+            BindToggle(uxml.Q<BaseField<bool>>("toggle-grid"), () => _meshPreviewSettings.ShowGrid, x => _meshPreviewSettings.ShowGrid = x);
+            BindToggle(uxml.Q<BaseField<bool>>("toggle-ground"), () => _meshPreviewSettings.ShowGround, x => _meshPreviewSettings.ShowGround = x);
+
+            int width = 400;
+            int height = 400;
+            if (_uvTexture == null) _uvTexture = CreateRenderTexture(width, height);
+            var uvImage = uxml.Q<Image>("uv-image");
+            uvImage.image = _uvTexture;
+            uvImage.style.width = width;
+            uvImage.style.height = height;
+
+            rootVisualElement.Add(uxml);
         }
 
-        private void UpdateToolbarImage(Image image, Texture texture)
+        private void OnViewportGUI()
         {
-            image.image = texture;
-            image.scaleMode = ScaleMode.ScaleToFit;
+            _ground.SetActive(_meshPreviewSettings.ShowGround);
+
+            var viewportRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true));
+
+            _previewSceneMotion.DoOnGUI(viewportRect);
+
+            _previewScene.OnGUI(viewportRect);
         }
 
         private void OnEnable()
@@ -176,34 +215,34 @@ namespace ZeludeEditor
 
         private void OnGUI()
         {
-            GUILayout.BeginHorizontal(EditorStyles.toolbar);
-            _meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, Styles.ToggleVerticesContent, EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, Styles.ToggleNormalsContent, EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, Styles.ToggleTangentsContent, EditorStyles.toolbarButton);
-            _meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, Styles.ToggleBinormalsContent, EditorStyles.toolbarButton);
-            EditorGUILayout.Space();
-            _meshPreviewSettings.ShowGrid = GUILayout.Toggle(_meshPreviewSettings.ShowGrid, Styles.ToggleGridContent, EditorStyles.toolbarButton);
-            EditorGUI.BeginChangeCheck();
-            _meshPreviewSettings.ShowFloor = GUILayout.Toggle(_meshPreviewSettings.ShowFloor, Styles.ToggleFloorContent, EditorStyles.toolbarButton);
-            if (EditorGUI.EndChangeCheck())
-            {
-                _floor.SetActive(_meshPreviewSettings.ShowFloor);
-            }
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
+            //GUILayout.BeginHorizontal(EditorStyles.toolbar);
+            //_meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, Styles.ToggleVerticesContent, EditorStyles.toolbarButton);
+            //_meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, Styles.ToggleNormalsContent, EditorStyles.toolbarButton);
+            //_meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, Styles.ToggleTangentsContent, EditorStyles.toolbarButton);
+            //_meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, Styles.ToggleBinormalsContent, EditorStyles.toolbarButton);
+            //EditorGUILayout.Space();
+            //_meshPreviewSettings.ShowGrid = GUILayout.Toggle(_meshPreviewSettings.ShowGrid, Styles.ToggleGridContent, EditorStyles.toolbarButton);
+            //EditorGUI.BeginChangeCheck();
+            //_meshPreviewSettings.ShowFloor = GUILayout.Toggle(_meshPreviewSettings.ShowFloor, Styles.ToggleFloorContent, EditorStyles.toolbarButton);
+            //if (EditorGUI.EndChangeCheck())
+            //{
+            //    _floor.SetActive(_meshPreviewSettings.ShowFloor);
+            //}
+            //GUILayout.FlexibleSpace();
+            //GUILayout.EndHorizontal();
 
-            var viewportRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true));
+            //var viewportRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true));
 
-            _previewSceneMotion.DoOnGUI(viewportRect);
+            //_previewSceneMotion.DoOnGUI(viewportRect);
 
-            _previewScene.OnGUI(viewportRect);
+            //_previewScene.OnGUI(viewportRect);
 
-            GUI.BeginGroup(viewportRect);
-            BeginWindows();
-            GUILayout.Window(0, new Rect(10, 10, 200, 200), MeshDetailsGUI, GUIContent.none, GUIStyle.none);
-            GUI.Window(1, new Rect(10, viewportRect.height - 410, 400, 400), DrawUVsGUI, GUIContent.none, GUIStyle.none);
-            EndWindows();
-            GUI.EndGroup();
+            //GUI.BeginGroup(viewportRect);
+            //BeginWindows();
+            //GUILayout.Window(0, new Rect(10, 10, 200, 200), MeshDetailsGUI, GUIContent.none, GUIStyle.none);
+            //GUI.Window(1, new Rect(10, viewportRect.height - 410, 400, 400), DrawUVsGUI, GUIContent.none, GUIStyle.none);
+            //EndWindows();
+            //GUI.EndGroup();
         }
 
         private void MeshDetailsGUI(int id)

@@ -6,16 +6,16 @@
 >
   <Style src="../USS/ModelPreviewEditorWindow.uss" />
   <editor:Toolbar>
-    <editor:ToolbarToggle text="Vertices"></editor:ToolbarToggle>
-    <editor:ToolbarToggle text="Normals"></editor:ToolbarToggle>
-    <editor:ToolbarToggle text="Tangents"></editor:ToolbarToggle>
-    <editor:ToolbarToggle text="Binormals"></editor:ToolbarToggle>
+    <editor:ToolbarToggle text="Vertices" name="toggle-vertices"></editor:ToolbarToggle>
+    <editor:ToolbarToggle text="Normals" name="toggle-normals"></editor:ToolbarToggle>
+    <editor:ToolbarToggle text="Tangents" name="toggle-tangents"></editor:ToolbarToggle>
+    <editor:ToolbarToggle text="Binormals" name="toggle-binormals"></editor:ToolbarToggle>
     <editor:ToolbarSpacer></editor:ToolbarSpacer>
-    <editor:ToolbarToggle>
+    <editor:ToolbarToggle name="toggle-grid">
       <engine:Image class="grid-image"/>
     </editor:ToolbarToggle>
-    <editor:ToolbarToggle>
-      <engine:Image class="floor-image"/>
+    <editor:ToolbarToggle name="toggle-ground">
+      <engine:Image class="ground-image"/>
     </editor:ToolbarToggle>
   </editor:Toolbar>
   <engine:VisualElement name="viewport-container">

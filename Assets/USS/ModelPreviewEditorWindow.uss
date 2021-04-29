@@ -12,6 +12,10 @@
 	top: 10px;
 }
 
+#viewport-stats Label {
+	color: #ffffff;
+}
+
 #uv-window {
 	position: absolute;
 	left: 10px;
@@ -19,9 +23,6 @@
 }
 
 #uv-image {
-	background-color: #FFFFFF;
-	width: 400px;
-	height: 400px;
 }
 
 Toolbar {
