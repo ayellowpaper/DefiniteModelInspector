@@ -1,0 +1,14 @@
+.toggle-with-menu {
+	flex-direction: row;
+}
+
+.toggle-with-menu-toggle {
+
+}
+
+.toggle-with-menu-menu {
+	border-width: 0px 0px 0px 1px;
+	margin: 4px 0px 5px 2px;
+	padding: 0px 0px 0px 3px;
+	background-color: rgba(0, 0, 0, 0);
+}

@@ -4,6 +4,7 @@
     xmlns:engine="UnityEngine.UIElements"
     xmlns:editor="UnityEditor.UIElements"
 >
+  <Template src="ToolbarToggleWithMenuTemplate.uxml" name="ToggleWithMenu" />
   <Style src="../USS/ModelPreviewEditorWindow.uss" />
   <editor:Toolbar>
     <editor:ToolbarToggle text="Vertices" name="toggle-vertices"></editor:ToolbarToggle>
@@ -18,7 +19,11 @@
       <engine:Image class="ground-image"/>
     </editor:ToolbarToggle>
     <editor:ToolbarSpacer></editor:ToolbarSpacer>
-    <editor:ToolbarMenu text="UV: None" name="uv-select"/>
+    <engine:Instance class="toggle-with-menu" template="ToggleWithMenu">
+      <AttributeOverrides element-name="toggle" text="UV: 0" />
+      <AttributeOverrides element-name="toggle" name="toggle-uv" />
+      <AttributeOverrides element-name="toggle-menu" name="toggle-uv-menu" />
+    </engine:Instance>
   </editor:Toolbar>
   <engine:VisualElement name="viewport-container">
     <engine:IMGUIContainer name="viewport"/>

@@ -29,37 +29,14 @@ namespace ZeludeEditor
         private Material _handleMat;
         private RenderTexture _uvTexture;
 
+        private Image _uvImage;
+
         [SerializeField]
         private PreviewSceneMotion _previewSceneMotion;
         [SerializeField]
         private MeshPreviewSettings _meshPreviewSettings;
 
         private static Dictionary<string, MeshPreviewEditorWindow> _registeredEditors = new Dictionary<string, MeshPreviewEditorWindow>();
-
-        private static class Styles
-        {
-            public static readonly GUIStyle DropShadowLabelStyle;
-            public static readonly GUIContent ToggleVerticesContent;
-            public static readonly GUIContent ToggleNormalsContent;
-            public static readonly GUIContent ToggleTangentsContent;
-            public static readonly GUIContent ToggleBinormalsContent;
-            public static readonly GUIContent ToggleGridContent;
-            public static readonly GUIContent _toggleGroundContent;
-
-            static Styles()
-            {
-                DropShadowLabelStyle = new GUIStyle("PreOverlayLabel");
-                DropShadowLabelStyle.alignment = TextAnchor.MiddleLeft;
-                DropShadowLabelStyle.fontSize = 13;
-
-                ToggleVerticesContent = EditorGUIUtility.TrTextContent("Vertices", "");
-                ToggleNormalsContent = EditorGUIUtility.TrTextContent("Normals", "");
-                ToggleTangentsContent = EditorGUIUtility.TrTextContent("Tangents", "");
-                ToggleBinormalsContent = EditorGUIUtility.TrTextContent("Binormals", "");
-                ToggleGridContent = EditorGUIUtility.TrIconContent("GridAxisY", "");
-                _toggleGroundContent = EditorGUIUtility.TrIconContent(Resources.Load<Texture>("MeshPreview/Ground"), "");
-            }
-        }
 
         [System.Serializable]
         public class MeshPreviewSettings
@@ -138,6 +115,7 @@ namespace ZeludeEditor
             var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
             var uxml = template.Instantiate();
             uxml.style.flexGrow = 1;
+            rootVisualElement.Add(uxml);
 
             void BindToggle(BaseField<bool> toggle, Func<bool> getter, Action<bool> setter)
             {
@@ -156,6 +134,7 @@ namespace ZeludeEditor
             uxml.Query<Image>(className: "ground-image").ForEach(img => UpdateToolbarImage(img, groundTexture));
             uxml.Query<Image>(className: "grid-image").ForEach(img => UpdateToolbarImage(img, gridTexture));
             var imguiViewport = uxml.Q<IMGUIContainer>(name: "viewport");
+            imguiViewport.cullingEnabled = true;
             imguiViewport.contextType = ContextType.Editor;
             imguiViewport.onGUIHandler = OnViewportGUI;
 
@@ -167,15 +146,22 @@ namespace ZeludeEditor
             BindToggle(uxml.Q<BaseField<bool>>("toggle-grid"), () => _meshPreviewSettings.ShowGrid, x => _meshPreviewSettings.ShowGrid = x);
             BindToggle(uxml.Q<BaseField<bool>>("toggle-ground"), () => _meshPreviewSettings.ShowGround, x => _meshPreviewSettings.ShowGround = x);
 
+            ToggleUVWindow(false);
+            uxml.Q<BaseField<bool>>("toggle-uv").RegisterValueChangedCallback(x => ToggleUVWindow(x.newValue));
+        }
+
+        private void ToggleUVWindow(bool flag)
+        {
+            rootVisualElement.Q("uv-window").visible = flag;
+            if (flag == false) return;
+
             int width = 400;
             int height = 400;
             if (_uvTexture == null) _uvTexture = CreateRenderTexture(width, height);
-            var uvImage = uxml.Q<Image>("uv-image");
+            var uvImage = rootVisualElement.Q<Image>("uv-image");
             uvImage.image = _uvTexture;
             uvImage.style.width = width;
             uvImage.style.height = height;
-
-            rootVisualElement.Add(uxml);
         }
 
         private void OnViewportGUI()
@@ -206,43 +192,6 @@ namespace ZeludeEditor
             _registeredEditors.Remove(_guidString);
             if (_uvTexture != null) DestroyImmediate(_uvTexture);
             //if (_modelImporterEditor != null) DestroyImmediate(_modelImporterEditor);
-        }
-
-        private void Update()
-        {
-            Repaint();
-        }
-
-        private void OnGUI()
-        {
-            //GUILayout.BeginHorizontal(EditorStyles.toolbar);
-            //_meshPreviewSettings.ShowVertices = GUILayout.Toggle(_meshPreviewSettings.ShowVertices, Styles.ToggleVerticesContent, EditorStyles.toolbarButton);
-            //_meshPreviewSettings.ShowNormals = GUILayout.Toggle(_meshPreviewSettings.ShowNormals, Styles.ToggleNormalsContent, EditorStyles.toolbarButton);
-            //_meshPreviewSettings.ShowTangents = GUILayout.Toggle(_meshPreviewSettings.ShowTangents, Styles.ToggleTangentsContent, EditorStyles.toolbarButton);
-            //_meshPreviewSettings.ShowBinormals = GUILayout.Toggle(_meshPreviewSettings.ShowBinormals, Styles.ToggleBinormalsContent, EditorStyles.toolbarButton);
-            //EditorGUILayout.Space();
-            //_meshPreviewSettings.ShowGrid = GUILayout.Toggle(_meshPreviewSettings.ShowGrid, Styles.ToggleGridContent, EditorStyles.toolbarButton);
-            //EditorGUI.BeginChangeCheck();
-            //_meshPreviewSettings.ShowFloor = GUILayout.Toggle(_meshPreviewSettings.ShowFloor, Styles.ToggleFloorContent, EditorStyles.toolbarButton);
-            //if (EditorGUI.EndChangeCheck())
-            //{
-            //    _floor.SetActive(_meshPreviewSettings.ShowFloor);
-            //}
-            //GUILayout.FlexibleSpace();
-            //GUILayout.EndHorizontal();
-
-            //var viewportRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true));
-
-            //_previewSceneMotion.DoOnGUI(viewportRect);
-
-            //_previewScene.OnGUI(viewportRect);
-
-            //GUI.BeginGroup(viewportRect);
-            //BeginWindows();
-            //GUILayout.Window(0, new Rect(10, 10, 200, 200), MeshDetailsGUI, GUIContent.none, GUIStyle.none);
-            //GUI.Window(1, new Rect(10, viewportRect.height - 410, 400, 400), DrawUVsGUI, GUIContent.none, GUIStyle.none);
-            //EndWindows();
-            //GUI.EndGroup();
         }
 
         private void MeshDetailsGUI(int id)
@@ -317,10 +266,10 @@ namespace ZeludeEditor
 
         private void DrawInfoLine(string label, string text)
         {
-            const int spacing = 65;
-            var rect = GUILayoutUtility.GetRect(GUIContent.none, Styles.DropShadowLabelStyle);
-            EditorGUI.DropShadowLabel(new Rect(rect.x, rect.y, spacing, rect.height), EditorGUIUtility.TrTextContent(label), Styles.DropShadowLabelStyle);
-            EditorGUI.DropShadowLabel(new Rect(rect.x + spacing, rect.y, rect.width - spacing, rect.height), EditorGUIUtility.TrTextContent(text), Styles.DropShadowLabelStyle);
+            //const int spacing = 65;
+            //var rect = GUILayoutUtility.GetRect(GUIContent.none, Styles.DropShadowLabelStyle);
+            //EditorGUI.DropShadowLabel(new Rect(rect.x, rect.y, spacing, rect.height), EditorGUIUtility.TrTextContent(label), Styles.DropShadowLabelStyle);
+            //EditorGUI.DropShadowLabel(new Rect(rect.x + spacing, rect.y, rect.width - spacing, rect.height), EditorGUIUtility.TrTextContent(text), Styles.DropShadowLabelStyle);
         }
 
         public static Bounds CalculateBounds(GameObject go)
