@@ -2,11 +2,11 @@
 	flex-direction: row;
 }
 
-.toggle-with-menu-toggle {
+.toggle-with-menu__toggle {
 
 }
 
-.toggle-with-menu-menu {
+.toggle-with-menu__menu {
 	border-width: 0px 0px 0px 1px;
 	margin: 4px 0px 5px 2px;
 	padding: 0px 0px 0px 3px;

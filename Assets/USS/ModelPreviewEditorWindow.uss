@@ -10,10 +10,15 @@
 	position: absolute;
 	left: 10px;
 	top: 10px;
+	background-color: rgba(0, 0, 0, 0.2);
+	border-radius: 0px;
+	padding: 4px;
 }
 
 #viewport-stats Label {
 	color: #ffffff;
+	font-size: 13px;
+	-unity-font-style: bold;
 }
 
 #uv-window {
@@ -27,4 +32,12 @@
 
 Toolbar {
 	height: 22px;
+}
+
+.row {
+	flex-direction: row;
+}
+
+.row__label {
+	width: 80px;
 }

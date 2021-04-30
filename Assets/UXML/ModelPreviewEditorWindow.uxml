@@ -28,7 +28,6 @@
   <engine:VisualElement name="viewport-container">
     <engine:IMGUIContainer name="viewport"/>
     <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
-      <engine:Label text="Vertices" picking-mode="Ignore"/>
     </engine:VisualElement>
     <engine:VisualElement name="uv-window" picking-mode="Ignore">
       <engine:Image name="uv-image" picking-mode="Ignore"/>

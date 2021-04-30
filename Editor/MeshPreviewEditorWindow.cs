@@ -146,8 +146,43 @@ namespace ZeludeEditor
             BindToggle(uxml.Q<BaseField<bool>>("toggle-grid"), () => _meshPreviewSettings.ShowGrid, x => _meshPreviewSettings.ShowGrid = x);
             BindToggle(uxml.Q<BaseField<bool>>("toggle-ground"), () => _meshPreviewSettings.ShowGround, x => _meshPreviewSettings.ShowGround = x);
 
+            uxml.Q("viewport-stats").Add(CreateStatsRow("Objects", "object-count"));
+            uxml.Q("viewport-stats").Add(CreateStatsRow("Vertices", "vertex-count"));
+            uxml.Q("viewport-stats").Add(CreateStatsRow("Tris", "tri-count"));
+
+            UpdateStatsLabel();
             ToggleUVWindow(false);
             uxml.Q<BaseField<bool>>("toggle-uv").RegisterValueChangedCallback(x => ToggleUVWindow(x.newValue));
+        }
+
+        private void UpdateStatsLabel()
+        {
+            DrawInfoLine("Objects", string.Format("{0:n0}/{0:n0}", _meshGroup.MeshInfos.Length));
+            DrawInfoLine("Vertices", string.Format("{0:n0}/{0:n0}", _meshGroup.GetVertexCount()));
+            DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount()));
+
+            rootVisualElement.Q<Label>("object-count").text = string.Format("{0:n0}/{0:n0}", _meshGroup.MeshInfos.Length);
+            rootVisualElement.Q<Label>("vertex-count").text = string.Format("{0:n0}/{0:n0}", _meshGroup.GetVertexCount());
+            rootVisualElement.Q<Label>("tri-count").text = string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount());
+        }
+
+        private VisualElement CreateStatsRow(string labelText, string valueXmlName)
+        {
+            var statsRow = new VisualElement();
+            statsRow.AddToClassList("row");
+            var label = new Label(labelText);
+            label.AddToClassList("row__label");
+            var value = new Label();
+            value.name = valueXmlName;
+            value.AddToClassList("row__value");
+            statsRow.Add(label);
+            statsRow.Add(value);
+
+            statsRow.pickingMode = PickingMode.Ignore;
+            label.pickingMode = PickingMode.Ignore;
+            value.pickingMode = PickingMode.Ignore;
+
+            return statsRow;
         }
 
         private void ToggleUVWindow(bool flag)

@@ -6,7 +6,7 @@
     xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
 >
   <Style src="../USS/ToolbarToggleWithMenuTemplate.uss" />
-  <editor:ToolbarToggle name="toggle" class="toggle-with-menu-toggle">
-    <editor:ToolbarMenu name="toggle-menu" class="toggle-with-menu-menu"/>
+  <editor:ToolbarToggle name="toggle" class="toggle-with-menu__toggle">
+    <editor:ToolbarMenu name="toggle-menu" class="toggle-with-menu__menu"/>
   </editor:ToolbarToggle>
 </engine:UXML>
