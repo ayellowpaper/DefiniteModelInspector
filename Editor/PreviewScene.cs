@@ -16,7 +16,7 @@ namespace ZeludeEditor
 
         public event System.Action OnDrawHandles;
 
-        private readonly List<GameObject> m_GameObjects = new List<GameObject>();
+        private readonly List<GameObject> _gameObjects = new List<GameObject>();
 
         public PreviewScene()
         {
@@ -48,21 +48,21 @@ namespace ZeludeEditor
         public void Dispose()
         {
             EditorSceneManager.ClosePreviewScene(Scene);
-            foreach (GameObject gameObject in m_GameObjects)
+            foreach (GameObject gameObject in _gameObjects)
             {
                 Object.DestroyImmediate(gameObject, true);
             }
             if (RenderTexture != null) Object.DestroyImmediate(RenderTexture, true);
-            m_GameObjects.Clear();
+            _gameObjects.Clear();
             OnDrawHandles = null;
         }
 
         public void AddGameObject(GameObject go)
         {
-            if (!m_GameObjects.Contains(go))
+            if (!_gameObjects.Contains(go))
             {
                 SceneManager.MoveGameObjectToScene(go, Scene);
-                m_GameObjects.Add(go);
+                _gameObjects.Add(go);
             }
         }
 

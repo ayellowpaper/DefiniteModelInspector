@@ -1,9 +1,14 @@
 #viewport-container {
 	flex-grow: 1;
+	flex-direction: row;
 }
 
 #viewport {
 	flex-grow: 1;
+}
+
+#hierarchy {
+	width: 400px;
 }
 
 #viewport-stats {
@@ -40,4 +45,9 @@ Toolbar {
 
 .row__label {
 	width: 80px;
+}
+
+.window-splitter {
+	width: 2px;
+	background-color: #191919;
 }

@@ -9,18 +9,30 @@ namespace ZeludeEditor
 {
     public class MeshGroup
     {
+        public readonly MeshGroupNode Root;
         public readonly MeshInfo[] MeshInfos;
 
         public MeshGroup(GameObject objectRoot)
         {
-            var renderers = objectRoot.GetComponentsInChildren<Renderer>();
+            Root = ConstructTree(objectRoot);
             List<MeshInfo> meshInfos = new List<MeshInfo>();
-            foreach (var renderer in renderers)
-            {
-                if (MeshInfo.CreateFromRenderer(renderer, out MeshInfo meshInfo))
-                    meshInfos.Add(meshInfo);
-            }
+            foreach (var node in Root)
+                if (node.MeshInfo != null)
+                    meshInfos.Add(node.MeshInfo);
             MeshInfos = meshInfos.ToArray();
+        }
+
+        private MeshGroupNode ConstructTree(GameObject gameObject)
+        {
+            var renderer = gameObject.GetComponent<Renderer>();
+            MeshInfo.CreateFromRenderer(renderer, out MeshInfo meshInfo);
+            var node = new MeshGroupNode(gameObject, meshInfo);
+            foreach (Transform child in gameObject.transform)
+            {
+                node.AddChild(ConstructTree(child.gameObject));
+            }
+            return node;
+
         }
 
         public int GetVertexCount()
@@ -85,28 +97,52 @@ namespace ZeludeEditor
         }
     }
 
-    //public class Node<T>
-    //{
-    //    public readonly T Target;
-    //    public IReadOnlyList<Node<T>> Children => _children;
+    public class MeshGroupNode : IEnumerable<MeshGroupNode>
+    {
+        public readonly GameObject GameObject;
+        public readonly MeshInfo MeshInfo;
+        public IReadOnlyList<MeshGroupNode> Children => _children;
 
-    //    private List<Node<T>> _children = new List<Node<T>>();
+        private List<MeshGroupNode> _children = new List<MeshGroupNode>();
 
-    //    public void AddChild(Node<T> child)
-    //    {
-    //        _children.Add(child);
-    //    }
-    //}
+        public void AddChild(MeshGroupNode child)
+        {
+            _children.Add(child);
+        }
+
+        public IEnumerator<MeshGroupNode> GetEnumerator()
+        {
+            return Recursive(this);
+        }
+
+        private IEnumerator<MeshGroupNode> Recursive(MeshGroupNode node)
+        {
+            yield return node;
+            foreach (var child in node.Children)
+            {
+                var ite = Recursive(child);
+                while (ite.MoveNext())
+                    yield return ite.Current;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public MeshGroupNode(GameObject gameObject, MeshInfo meshInfo = null)
+        {
+            GameObject = gameObject;
+            MeshInfo = meshInfo;
+        }
+    }
 
     public class MeshInfo
     {
         public bool IsVisible {
-            get => _isVisible;
-            set {
-                if (_isVisible == value) return;
-                _isVisible = value;
-                Renderer.enabled = _isVisible;
-            }
+            get => Renderer.enabled;
+            set => Renderer.enabled = value;
         }
 
         public IReadOnlyList<IReadOnlyList<int>> SubmeshIndices => _submeshIndices;
@@ -124,7 +160,6 @@ namespace ZeludeEditor
         private List<List<int>> _submeshIndices;
         private List<List<Vector2>> _uvs;
 
-        private bool _isVisible = true;
         private bool[] _visibleSubmeshes;
 
         public MeshInfo(Renderer renderer, Mesh mesh)

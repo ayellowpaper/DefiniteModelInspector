@@ -7,6 +7,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using System.IO;
+using UnityEditor.IMGUI.Controls;
 using System;
 
 namespace ZeludeEditor
@@ -26,11 +27,14 @@ namespace ZeludeEditor
         private Editor _modelImporterEditor;
         private PreviewScene _previewScene;
         private MeshGroup _meshGroup;
+        private MeshGroupHierarchy _hierarchy;
         private Material _handleMat;
         private RenderTexture _uvTexture;
 
         private Image _uvImage;
 
+        [SerializeField]
+        private TreeViewState _treeViewState = new TreeViewState();
         [SerializeField]
         private PreviewSceneMotion _previewSceneMotion;
         [SerializeField]
@@ -65,12 +69,23 @@ namespace ZeludeEditor
             }
             else
             {
-                var window = CreateWindow<MeshPreviewEditorWindow>(new System.Type[] { typeof(MeshPreviewEditorWindow), typeof(SceneView) });
+                var window = CreateWindow<MeshPreviewEditorWindow>(new Type[] { typeof(MeshPreviewEditorWindow), typeof(SceneView) });
                 window._guidString = guidString;
                 window.Initialize();
                 window.Focus();
             }
             return true;
+        }
+
+        private void OnEnable()
+        {
+            if (string.IsNullOrWhiteSpace(_guidString)) return;
+            Initialize();
+        }
+
+        private void OnDisable()
+        {
+            Cleanup();
         }
 
         private void Initialize()
@@ -83,6 +98,7 @@ namespace ZeludeEditor
             titleContent = new GUIContent(_sourceGO.name, AssetPreview.GetAssetPreview(_sourceGO));
             _previewScene = new PreviewScene();
             _previewGO = Instantiate(_sourceGO);
+            _previewGO.name = _sourceGO.name;
             _previewGO.transform.position = Vector3.zero;
             _previewScene.AddGameObject(_previewGO);
             _previewScene.OnDrawHandles += DrawHandles;
@@ -110,6 +126,8 @@ namespace ZeludeEditor
 
             _registeredEditors.Add(_guidString, this);
 
+            _hierarchy = new MeshGroupHierarchy(_meshGroup, _treeViewState);
+
             // CREATE UXML HERE
             string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
             var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
@@ -134,9 +152,14 @@ namespace ZeludeEditor
             uxml.Query<Image>(className: "ground-image").ForEach(img => UpdateToolbarImage(img, groundTexture));
             uxml.Query<Image>(className: "grid-image").ForEach(img => UpdateToolbarImage(img, gridTexture));
             var imguiViewport = uxml.Q<IMGUIContainer>(name: "viewport");
-            imguiViewport.cullingEnabled = true;
+            imguiViewport.cullingEnabled = false;
             imguiViewport.contextType = ContextType.Editor;
             imguiViewport.onGUIHandler = OnViewportGUI;
+
+            var imguiHierarchy = uxml.Q<IMGUIContainer>(name: "hierarchy");
+            imguiHierarchy.cullingEnabled = false;
+            imguiHierarchy.contextType = ContextType.Editor;
+            imguiHierarchy.onGUIHandler = OnHierarchyGUI;
 
             BindToggle(uxml.Q<BaseField<bool>>("toggle-vertices"), () => _meshPreviewSettings.ShowVertices, x => _meshPreviewSettings.ShowVertices = x);
             BindToggle(uxml.Q<BaseField<bool>>("toggle-normals"), () => _meshPreviewSettings.ShowNormals, x => _meshPreviewSettings.ShowNormals = x);
@@ -210,15 +233,9 @@ namespace ZeludeEditor
             _previewScene.OnGUI(viewportRect);
         }
 
-        private void OnEnable()
+        private void OnHierarchyGUI()
         {
-            if (string.IsNullOrWhiteSpace(_guidString)) return;
-            Initialize();
-        }
-
-        private void OnDisable()
-        {
-            Cleanup();
+            _hierarchy.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
         }
 
         private void Cleanup()
