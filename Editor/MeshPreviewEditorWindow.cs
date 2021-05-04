@@ -181,6 +181,12 @@ namespace ZeludeEditor
             uxml.Q("viewport-stats").Add(CreateStatsRow("Vertices", "vertex-count"));
             uxml.Q("viewport-stats").Add(CreateStatsRow("Tris", "tri-count"));
 
+            uxml.Q<Button>("ping-asset").clicked += () =>
+            {
+                EditorUtility.FocusProjectWindow();
+                EditorGUIUtility.PingObject(_sourceGO);
+            };
+
             UpdateStatsLabel();
             ToggleUVWindow(false);
             uxml.Q<BaseField<bool>>("toggle-uv").RegisterValueChangedCallback(x => ToggleUVWindow(x.newValue));
