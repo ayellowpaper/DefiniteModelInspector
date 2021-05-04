@@ -194,7 +194,6 @@ namespace ZeludeEditor
             }
 
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
-            Debug.Log(_sourceGO);
             _previewGO = Instantiate(_sourceGO);
             _previewGO.name = _sourceGO.name;
             _previewGO.transform.position = Vector3.zero;
