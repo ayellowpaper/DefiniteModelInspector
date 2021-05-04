@@ -6,34 +6,36 @@
 >
   <Template src="ToolbarToggleWithMenuTemplate.uxml" name="ToggleWithMenu" />
   <Style src="../USS/ModelPreviewEditorWindow.uss" />
-  <editor:Toolbar>
-    <editor:ToolbarToggle text="Vertices" name="toggle-vertices"></editor:ToolbarToggle>
-    <editor:ToolbarToggle text="Normals" name="toggle-normals"></editor:ToolbarToggle>
-    <editor:ToolbarToggle text="Tangents" name="toggle-tangents"></editor:ToolbarToggle>
-    <editor:ToolbarToggle text="Binormals" name="toggle-binormals"></editor:ToolbarToggle>
-    <editor:ToolbarSpacer></editor:ToolbarSpacer>
-    <editor:ToolbarToggle name="toggle-grid">
-      <engine:Image class="grid-image"/>
-    </editor:ToolbarToggle>
-    <editor:ToolbarToggle name="toggle-ground">
-      <engine:Image class="ground-image"/>
-    </editor:ToolbarToggle>
-    <editor:ToolbarSpacer></editor:ToolbarSpacer>
-    <engine:Instance class="toggle-with-menu" template="ToggleWithMenu">
-      <AttributeOverrides element-name="toggle" text="UV: 0" />
-      <AttributeOverrides element-name="toggle" name="toggle-uv" />
-      <AttributeOverrides element-name="toggle-menu" name="toggle-uv-menu" />
-    </engine:Instance>
-  </editor:Toolbar>
-  <engine:VisualElement name="viewport-container">
-    <engine:IMGUIContainer name="hierarchy"/>
+  <engine:VisualElement name="model-preview-window">
+    <engine:VisualElement name="viewport-container">
+      <editor:Toolbar>
+        <editor:ToolbarToggle text="Vertices" name="toggle-vertices"></editor:ToolbarToggle>
+        <editor:ToolbarToggle text="Normals" name="toggle-normals"></editor:ToolbarToggle>
+        <editor:ToolbarToggle text="Tangents" name="toggle-tangents"></editor:ToolbarToggle>
+        <editor:ToolbarToggle text="Binormals" name="toggle-binormals"></editor:ToolbarToggle>
+        <editor:ToolbarSpacer></editor:ToolbarSpacer>
+        <editor:ToolbarToggle name="toggle-grid">
+          <engine:Image class="grid-image"/>
+        </editor:ToolbarToggle>
+        <editor:ToolbarToggle name="toggle-ground">
+          <engine:Image class="ground-image"/>
+        </editor:ToolbarToggle>
+        <editor:ToolbarSpacer></editor:ToolbarSpacer>
+        <engine:Instance class="toggle-with-menu" template="ToggleWithMenu">
+          <AttributeOverrides element-name="toggle" text="UV: 0" />
+          <AttributeOverrides element-name="toggle" name="toggle-uv" />
+          <AttributeOverrides element-name="toggle-menu" name="toggle-uv-menu" />
+        </engine:Instance>
+      </editor:Toolbar>
+      <engine:IMGUIContainer name="viewport">
+        <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
+        </engine:VisualElement>
+        <engine:VisualElement name="uv-window" picking-mode="Ignore">
+          <engine:Image name="uv-image" picking-mode="Ignore"/>
+        </engine:VisualElement>
+      </engine:IMGUIContainer>
+    </engine:VisualElement>
     <engine:VisualElement class="window-splitter"/>
-    <engine:IMGUIContainer name="viewport">
-      <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
-      </engine:VisualElement>
-      <engine:VisualElement name="uv-window" picking-mode="Ignore">
-        <engine:Image name="uv-image" picking-mode="Ignore"/>
-      </engine:VisualElement>
-    </engine:IMGUIContainer>
+    <engine:IMGUIContainer name="hierarchy"/>
   </engine:VisualElement>
 </engine:UXML>

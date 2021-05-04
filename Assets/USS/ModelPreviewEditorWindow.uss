@@ -1,6 +1,10 @@
+#model-preview-window {
+	flex-direction: row;
+	flex-grow: 1;
+}
+
 #viewport-container {
 	flex-grow: 1;
-	flex-direction: row;
 }
 
 #viewport {

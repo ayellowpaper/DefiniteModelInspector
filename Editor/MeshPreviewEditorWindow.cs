@@ -9,6 +9,7 @@ using UnityEditor.UIElements;
 using System.IO;
 using UnityEditor.IMGUI.Controls;
 using System;
+using UnityEditor.AssetImporters;
 
 namespace ZeludeEditor
 {
@@ -23,7 +24,7 @@ namespace ZeludeEditor
         private GameObject _sourceGO;
         private GameObject _previewGO;
         private GameObject _ground;
-        private ModelImporter _modelImporter;
+        private AssetImporter _modelImporter;
         private Editor _modelImporterEditor;
         private PreviewScene _previewScene;
         private MeshGroup _meshGroup;
@@ -39,6 +40,8 @@ namespace ZeludeEditor
         private PreviewSceneMotion _previewSceneMotion;
         [SerializeField]
         private MeshPreviewSettings _meshPreviewSettings;
+
+        public static IReadOnlyDictionary<string, MeshPreviewEditorWindow> RegisteredEditors => _registeredEditors;
 
         private static Dictionary<string, MeshPreviewEditorWindow> _registeredEditors = new Dictionary<string, MeshPreviewEditorWindow>();
 
@@ -77,6 +80,15 @@ namespace ZeludeEditor
             return true;
         }
 
+        public static bool HasWindow(string guid) => _registeredEditors.ContainsKey(guid);
+        public static bool TryGetWindowByGuid(string guid, out MeshPreviewEditorWindow result) => _registeredEditors.TryGetValue(guid, out result);
+
+        public static MeshPreviewEditorWindow GetWindowByGuid(string guid)
+        {
+            _registeredEditors.TryGetValue(guid, out MeshPreviewEditorWindow value);
+            return value;
+        }
+
         private void OnEnable()
         {
             if (string.IsNullOrWhiteSpace(_guidString)) return;
@@ -92,15 +104,15 @@ namespace ZeludeEditor
         {
             _assetPath = AssetDatabase.GUIDToAssetPath(_guidString);
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
-            _modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
+            _modelImporter = AssetImporter.GetAtPath(_assetPath);
             _modelImporterEditor = Editor.CreateEditor(_modelImporter);
+            var prop = _modelImporterEditor.GetType().GetProperty("needsApplyRevert", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var field = typeof(AssetImporterEditor).GetField("m_InstantApply", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field.SetValue(_modelImporterEditor, false);
 
             titleContent = new GUIContent(_sourceGO.name, AssetPreview.GetAssetPreview(_sourceGO));
             _previewScene = new PreviewScene();
-            _previewGO = Instantiate(_sourceGO);
-            _previewGO.name = _sourceGO.name;
-            _previewGO.transform.position = Vector3.zero;
-            _previewScene.AddGameObject(_previewGO);
+            ReloadMesh();
             _previewScene.OnDrawHandles += DrawHandles;
 
             var bounds = CalculateBounds(_previewGO);
@@ -115,8 +127,6 @@ namespace ZeludeEditor
 
             _meshPreviewSettings = new MeshPreviewSettings();
 
-            _meshGroup = new MeshGroup(_previewGO);
-
             _ground.SetActive(_meshPreviewSettings.ShowGround);
 
             var shader = Shader.Find("Zelude/Handles Lines");
@@ -125,8 +135,6 @@ namespace ZeludeEditor
             _handleMat.hideFlags = HideFlags.HideAndDontSave;
 
             _registeredEditors.Add(_guidString, this);
-
-            _hierarchy = new MeshGroupHierarchy(_meshGroup, _treeViewState);
 
             // CREATE UXML HERE
             string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
@@ -176,6 +184,23 @@ namespace ZeludeEditor
             UpdateStatsLabel();
             ToggleUVWindow(false);
             uxml.Q<BaseField<bool>>("toggle-uv").RegisterValueChangedCallback(x => ToggleUVWindow(x.newValue));
+        }
+
+        public void ReloadMesh()
+        {
+            if (_previewGO != null)
+            {
+                DestroyImmediate(_previewGO, true);
+            }
+
+            _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
+            Debug.Log(_sourceGO);
+            _previewGO = Instantiate(_sourceGO);
+            _previewGO.name = _sourceGO.name;
+            _previewGO.transform.position = Vector3.zero;
+            _previewScene.AddSelfManagedGO(_previewGO);
+            _meshGroup = new MeshGroup(_previewGO);
+            _hierarchy = new MeshGroupHierarchy(_meshGroup, _treeViewState);
         }
 
         private void UpdateStatsLabel()
@@ -235,15 +260,17 @@ namespace ZeludeEditor
 
         private void OnHierarchyGUI()
         {
-            _hierarchy.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
+            //_hierarchy.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
+            _modelImporterEditor.OnInspectorGUI();
         }
 
         private void Cleanup()
         {
             if (_previewScene != null) _previewScene.Dispose();
             _registeredEditors.Remove(_guidString);
-            if (_uvTexture != null) DestroyImmediate(_uvTexture);
-            //if (_modelImporterEditor != null) DestroyImmediate(_modelImporterEditor);
+            if (_uvTexture != null) DestroyImmediate(_uvTexture, true);
+            if (_modelImporterEditor != null) DestroyImmediate(_modelImporterEditor, true);
+            if (_previewGO != null) DestroyImmediate(_previewGO, true);
         }
 
         private void MeshDetailsGUI(int id)
