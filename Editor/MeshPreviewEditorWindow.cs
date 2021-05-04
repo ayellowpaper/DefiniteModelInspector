@@ -18,8 +18,6 @@ namespace ZeludeEditor
         [SerializeField]
         private string _guidString;
 
-        const float GizmoLineLength = 0.02f;
-
         private string _assetPath;
         private GameObject _sourceGO;
         private GameObject _previewGO;
@@ -30,9 +28,15 @@ namespace ZeludeEditor
         private MeshGroup _meshGroup;
         private MeshGroupHierarchy _hierarchy;
         private Material _handleMat;
-        private RenderTexture _uvTexture;
+        private UVTextureGenerator _uvTexture;
 
-        private Image _uvImage;
+        private MeshGroupDrawer _vertexDrawer;
+        private MeshGroupDrawer _normalDrawer;
+        private MeshGroupDrawer _binormalDrawer;
+        private MeshGroupDrawer _tangentDrawer;
+
+        public UVTextureGenerator UVTexture => _uvTexture;
+        public MeshGroup MeshGroup => _meshGroup;
 
         [SerializeField]
         private TreeViewState _treeViewState = new TreeViewState();
@@ -134,6 +138,11 @@ namespace ZeludeEditor
             _handleMat.SetInt("_HandleZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
             _handleMat.hideFlags = HideFlags.HideAndDontSave;
 
+            _vertexDrawer = new VertexDrawer(_meshGroup);
+            _tangentDrawer = new TangentDrawer(_meshGroup);
+            _normalDrawer = new NormalDrawer(_meshGroup);
+            _binormalDrawer = new BinormalDrawer(_meshGroup);
+
             _registeredEditors.Add(_guidString, this);
 
             // CREATE UXML HERE
@@ -190,6 +199,22 @@ namespace ZeludeEditor
             UpdateStatsLabel();
             ToggleUVWindow(false);
             uxml.Q<BaseField<bool>>("toggle-uv").RegisterValueChangedCallback(x => ToggleUVWindow(x.newValue));
+            uxml.Q<ToolbarMenu>("toggle-uv-menu").RegisterCallback<MouseUpEvent>(x => ShowUVPopup());
+        }
+
+        private void ShowUVPopup()
+        {
+            var rect = rootVisualElement.Q("toggle-uv").worldBound;
+            UnityEditor.PopupWindow.Show(rect, new UVSettingsWindow(this));
+            GUIUtility.ExitGUI();
+        }
+
+        public void ChangeUVTextureIndex(int newIndex)
+        {
+            rootVisualElement.Q<ToolbarToggle>("toggle-uv").text = $"UV: {newIndex}";
+            rootVisualElement.Q<ToolbarToggle>("toggle-uv").SetValueWithoutNotify(true);
+            _uvTexture.UVChannelIndex = newIndex;
+            ToggleUVWindow(true);
         }
 
         public void ReloadMesh()
@@ -206,14 +231,14 @@ namespace ZeludeEditor
             _previewScene.AddSelfManagedGO(_previewGO);
             _meshGroup = new MeshGroup(_previewGO);
             _hierarchy = new MeshGroupHierarchy(_meshGroup, _treeViewState);
+
+            _uvTexture = new UVTextureGenerator();
+            foreach (var meshinfo in _meshGroup.MeshInfos)
+                _uvTexture.MeshInfos.Add(meshinfo);
         }
 
         private void UpdateStatsLabel()
         {
-            DrawInfoLine("Objects", string.Format("{0:n0}/{0:n0}", _meshGroup.MeshInfos.Length));
-            DrawInfoLine("Vertices", string.Format("{0:n0}/{0:n0}", _meshGroup.GetVertexCount()));
-            DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount()));
-
             rootVisualElement.Q<Label>("object-count").text = string.Format("{0:n0}/{0:n0}", _meshGroup.MeshInfos.Length);
             rootVisualElement.Q<Label>("vertex-count").text = string.Format("{0:n0}/{0:n0}", _meshGroup.GetVertexCount());
             rootVisualElement.Q<Label>("tri-count").text = string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount());
@@ -245,9 +270,9 @@ namespace ZeludeEditor
 
             int width = 400;
             int height = 400;
-            if (_uvTexture == null) _uvTexture = CreateRenderTexture(width, height);
+            _uvTexture.UpdateTexture(400, 400);
             var uvImage = rootVisualElement.Q<Image>("uv-image");
-            uvImage.image = _uvTexture;
+            uvImage.image = _uvTexture.RenderTexture;
             uvImage.style.width = width;
             uvImage.style.height = height;
         }
@@ -269,91 +294,18 @@ namespace ZeludeEditor
             _modelImporterEditor.OnInspectorGUI();
         }
 
+        private void OnGUI()
+        {
+            Repaint();
+        }
+
         private void Cleanup()
         {
             if (_previewScene != null) _previewScene.Dispose();
             _registeredEditors.Remove(_guidString);
-            if (_uvTexture != null) DestroyImmediate(_uvTexture, true);
+            if (_uvTexture != null) _uvTexture.Dispose();
             if (_modelImporterEditor != null) DestroyImmediate(_modelImporterEditor, true);
             if (_previewGO != null) DestroyImmediate(_previewGO, true);
-        }
-
-        private void MeshDetailsGUI(int id)
-        {
-            DrawInfoLine("Objects", string.Format("{0:n0}/{0:n0}", _meshGroup.MeshInfos.Length));
-            DrawInfoLine("Vertices", string.Format("{0:n0}/{0:n0}", _meshGroup.GetVertexCount()));
-            DrawInfoLine("Tris", string.Format("{0:n0}/{0:n0}", _meshGroup.GetTriCount()));
-        }
-
-        private void DrawUVsGUI(int id)
-        {
-            if (_uvTexture == null) _uvTexture = CreateRenderTexture(400, 400);
-            var rect = GUILayoutUtility.GetRect(400, 400);
-            //EditorGUI.DrawPreviewTexture(rect, _renderTexture);
-            Graphics.DrawTexture(rect, _uvTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color);
-        }
-
-        private RenderTexture CreateRenderTexture(int width, int height)
-        {
-            RenderTexture renderTexture = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-            renderTexture.hideFlags = HideFlags.HideAndDontSave;
-            renderTexture.antiAliasing = 1;
-            renderTexture.autoGenerateMips = false;
-            var prevTexture = RenderTexture.active;
-            RenderTexture.active = renderTexture;
-
-            Vector2 multiplier = new Vector2(width, height);
-
-            GL.Clear(true, true, new Color(1, 1, 1, 0));
-
-            GL.PushMatrix();
-            GL.modelview = Matrix4x4.TRS(new Vector3(0, 0, -1), Quaternion.Euler(0, 0, 0), Vector3.one);
-            GL.LoadProjectionMatrix(Matrix4x4.Ortho(0, 1, 0, 1, 0.01f, 10f));
-
-            _handleMat.SetPass(0);
-            GL.Begin(GL.LINES);
-            GL.Color(Color.white);
-
-            foreach (var meshInfo in _meshGroup.MeshInfos)
-            {
-                if (!meshInfo.IsVisible) continue;
-
-                var tris = meshInfo.Triangles;
-                var availableChannels = meshInfo.GetAvailableUVChannels();
-                foreach (var channel in availableChannels)
-                {
-                    var uvs = meshInfo.GetUVs(channel);
-                    for (int i = 0; i < tris.Length; i += 3)
-                    {
-                        int i0 = i;
-                        int i1 = i + 1;
-                        int i2 = i + 2;
-                        GL.Vertex(uvs[tris[i0]]);
-                        GL.Vertex(uvs[tris[i1]]);
-
-                        GL.Vertex(uvs[tris[i1]]);
-                        GL.Vertex(uvs[tris[i2]]);
-
-                        GL.Vertex(uvs[tris[i2]]);
-                        GL.Vertex(uvs[tris[i0]]);
-                    }
-                }
-            }
-
-            GL.End();
-
-            GL.PopMatrix();
-
-            RenderTexture.active = prevTexture;
-            return renderTexture;
-        }
-
-        private void DrawInfoLine(string label, string text)
-        {
-            //const int spacing = 65;
-            //var rect = GUILayoutUtility.GetRect(GUIContent.none, Styles.DropShadowLabelStyle);
-            //EditorGUI.DropShadowLabel(new Rect(rect.x, rect.y, spacing, rect.height), EditorGUIUtility.TrTextContent(label), Styles.DropShadowLabelStyle);
-            //EditorGUI.DropShadowLabel(new Rect(rect.x + spacing, rect.y, rect.width - spacing, rect.height), EditorGUIUtility.TrTextContent(text), Styles.DropShadowLabelStyle);
         }
 
         public static Bounds CalculateBounds(GameObject go)
@@ -369,95 +321,12 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
+            _handleMat.SetPass(0);
             if (_meshPreviewSettings.ShowGrid) DrawGrid();
-            if (_meshPreviewSettings.ShowNormals) DrawNormals();
-            if (_meshPreviewSettings.ShowVertices) DrawVertices();
-            if (_meshPreviewSettings.ShowTangents) DrawTangents();
-            if (_meshPreviewSettings.ShowBinormals) DrawBinormals();
-        }
-
-        private void DrawNormals()
-        {
-            _handleMat.SetPass(0);
-            GL.Begin(GL.LINES);
-            GL.Color(Color.red);
-            var vertices = _meshGroup.GetVertexEnumerator();
-            var normals = _meshGroup.GetNormalsEnumerator();
-
-            while (vertices.MoveNext())
-            {
-                normals.MoveNext();
-                GL.Vertex(vertices.Current);
-                GL.Vertex(vertices.Current + normals.Current * GizmoLineLength);
-            }
-            GL.End();
-        }
-
-        private void DrawVertices()
-        {
-            _handleMat.SetPass(0);
-            void DrawVertex(Vector3 position)
-            {
-                float size = GetVertexHandleSize(position, _previewScene.Camera);
-                GL.PushMatrix();
-                GL.MultMatrix(Matrix4x4.TRS(position, Quaternion.LookRotation(_previewScene.Camera.transform.forward), new Vector3(size, size, size)));
-                GL.Begin(GL.LINE_STRIP);
-                GL.Color(Color.green);
-                GL.Vertex(new Vector3(-0.5f,-0.5f));
-                GL.Vertex(new Vector3(-0.5f, 0.5f));
-                GL.Vertex(new Vector3( 0.5f, 0.5f));
-                GL.Vertex(new Vector3( 0.5f,-0.5f));
-                GL.Vertex(new Vector3(-0.5f, -0.5f));
-                GL.End();
-                GL.PopMatrix();
-            }
-
-            var vertices = _meshGroup.GetVertexEnumerator();
-            while (vertices.MoveNext())
-            {
-                DrawVertex(vertices.Current);
-            }
-        }
-
-        public static float GetVertexHandleSize(Vector3 position, Camera camera)
-        {
-            Vector3 diff = camera.transform.position - position;
-            var inv = Mathf.InverseLerp(0.05f, 0.5f, diff.magnitude);
-            return Mathf.Lerp(0.001f, 0.005f, inv);
-        }
-
-        private void DrawTangents()
-        {
-            _handleMat.SetPass(0);
-            GL.Begin(GL.LINES);
-            GL.Color(Color.blue);
-            var vertices = _meshGroup.GetVertexEnumerator();
-            var tangents = _meshGroup.GetTangentsEnumerator();
-
-            while (vertices.MoveNext())
-            {
-                tangents.MoveNext();
-                GL.Vertex(vertices.Current);
-                GL.Vertex(vertices.Current + tangents.Current * GizmoLineLength);
-            }
-            GL.End();
-        }
-
-        private void DrawBinormals()
-        {
-            _handleMat.SetPass(0);
-            GL.Begin(GL.LINES);
-            GL.Color(Color.yellow);
-            var vertices = _meshGroup.GetVertexEnumerator();
-            var binormals = _meshGroup.GetBinormalsEnumerator();
-
-            while (vertices.MoveNext())
-            {
-                binormals.MoveNext();
-                GL.Vertex(vertices.Current);
-                GL.Vertex(vertices.Current + binormals.Current * GizmoLineLength);
-            }
-            GL.End();
+            if (_meshPreviewSettings.ShowNormals) _normalDrawer.Draw(_previewScene.Camera);
+            if (_meshPreviewSettings.ShowVertices) _vertexDrawer.Draw(_previewScene.Camera);
+            if (_meshPreviewSettings.ShowTangents) _tangentDrawer.Draw(_previewScene.Camera);
+            if (_meshPreviewSettings.ShowBinormals) _binormalDrawer.Draw(_previewScene.Camera);
         }
 
         private void DrawGrid()
@@ -466,7 +335,6 @@ namespace ZeludeEditor
             const float lineSpace = 1f;
             const float offset = (lineCount / 2f) * lineSpace;
 
-            _handleMat.SetPass(0);
             GL.Begin(GL.LINES);
             GL.Color(new Color(126/255f, 126/255f, 125/255f));
             for (int x = 0; x < lineCount; x++)

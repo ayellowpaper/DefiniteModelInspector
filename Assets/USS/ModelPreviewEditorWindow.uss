@@ -55,3 +55,13 @@ Toolbar {
 	width: 2px;
 	background-color: #191919;
 }
+
+#toggle-uv {
+	padding-right: 0px;
+	width: 70px;
+}
+
+#toggle-uv-menu {
+	padding-right: 4px;
+	margin: 0px;
+}

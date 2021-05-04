@@ -32,7 +32,6 @@ namespace ZeludeEditor
                 node.AddChild(ConstructTree(child.gameObject));
             }
             return node;
-
         }
 
         public int GetVertexCount()
@@ -159,8 +158,11 @@ namespace ZeludeEditor
 
         private List<List<int>> _submeshIndices;
         private List<List<Vector2>> _uvs;
+        private List<int> _availableUVs;
 
         private bool[] _visibleSubmeshes;
+
+        public IReadOnlyList<int> AvailableUVs => _availableUVs;
 
         public MeshInfo(Renderer renderer, Mesh mesh)
         {
@@ -190,11 +192,14 @@ namespace ZeludeEditor
             }
 
             _uvs = new List<List<Vector2>>(8);
+            _availableUVs = new List<int>();
             List<Vector2> _temporaryList = new List<Vector2>(Vertices.Length);
             for (int i = 0; i < 8; i++)
             {
                 mesh.GetUVs(i, _temporaryList);
                 _uvs.Add(new List<Vector2>(_temporaryList));
+                if (_temporaryList.Count > 0)
+                    _availableUVs.Add(i);
             }
         }
 
@@ -221,14 +226,6 @@ namespace ZeludeEditor
                 if (_visibleSubmeshes[i])
                     visibleIndices.Add(i);
             return visibleIndices;
-        }
-        public List<int> GetAvailableUVChannels()
-        {
-            List<int> availableChannels = new List<int>(_uvs.Count);
-            for (int i = 0; i < _uvs.Count; i++)
-                if (HasUVChannel(i))
-                    availableChannels.Add(i);
-            return availableChannels;
         }
         public void SetSubmeshVisible(int submeshIndex, bool flag) => _visibleSubmeshes[submeshIndex] = flag;
         public bool IsSubmeshVisible(int submeshIndex) =>_visibleSubmeshes[submeshIndex];
