@@ -1,9 +1,7 @@
 {
-    "name": "ZeludeEditor.PackageTemplate",
+    "name": "ZeludeEditor.MeshPreview",
     "rootNamespace": "",
-    "references": [
-        "GUID:d68eaee023844ea449a84d67ed544525"
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
