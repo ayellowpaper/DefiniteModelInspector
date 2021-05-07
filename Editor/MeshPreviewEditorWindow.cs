@@ -22,8 +22,6 @@ namespace ZeludeEditor
         private GameObject _sourceGO;
         private GameObject _previewGO;
         private GameObject _ground;
-        private AssetImporter _modelImporter;
-        private Editor _modelImporterEditor;
         private PreviewScene _previewScene;
         private MeshGroup _meshGroup;
         private MeshGroupHierarchy _hierarchy;
@@ -108,11 +106,16 @@ namespace ZeludeEditor
         {
             _assetPath = AssetDatabase.GUIDToAssetPath(_guidString);
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
-            _modelImporter = AssetImporter.GetAtPath(_assetPath);
-            _modelImporterEditor = Editor.CreateEditor(_modelImporter);
-            var prop = _modelImporterEditor.GetType().GetProperty("needsApplyRevert", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var field = typeof(AssetImporterEditor).GetField("m_InstantApply", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            field.SetValue(_modelImporterEditor, false);
+            var modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
+            if (modelImporter.sourceAvatar != null)
+            {
+                var renderers = _sourceGO.GetComponentsInChildren<Renderer>();
+                if (renderers.Length == 0)
+                {
+                    _assetPath = AssetDatabase.GetAssetPath(modelImporter.sourceAvatar);
+                    _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
+                }
+            }
 
             titleContent = new GUIContent(_sourceGO.name, AssetPreview.GetAssetPreview(_sourceGO));
             _previewScene = new PreviewScene();
@@ -145,6 +148,8 @@ namespace ZeludeEditor
 
             _registeredEditors.Add(_guidString, this);
 
+            
+
             // CREATE UXML HERE
             string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
             var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
@@ -165,7 +170,7 @@ namespace ZeludeEditor
             }
 
             var gridTexture = EditorGUIUtility.LoadRequired("d_GridAxisY") as Texture;
-            var groundTexture = Resources.Load<Texture>("MeshPreview/Ground");
+            var groundTexture = AssetDatabase.LoadAssetAtPath<Texture>("Packages/com.zelude.meshpreview/Assets/Icons/Ground.png");
             uxml.Query<Image>(className: "ground-image").ForEach(img => UpdateToolbarImage(img, groundTexture));
             uxml.Query<Image>(className: "grid-image").ForEach(img => UpdateToolbarImage(img, gridTexture));
             var imguiViewport = uxml.Q<IMGUIContainer>(name: "viewport");
@@ -173,10 +178,10 @@ namespace ZeludeEditor
             imguiViewport.contextType = ContextType.Editor;
             imguiViewport.onGUIHandler = OnViewportGUI;
 
-            var imguiHierarchy = uxml.Q<IMGUIContainer>(name: "hierarchy");
-            imguiHierarchy.cullingEnabled = false;
-            imguiHierarchy.contextType = ContextType.Editor;
-            imguiHierarchy.onGUIHandler = OnHierarchyGUI;
+            //var imguiHierarchy = uxml.Q<IMGUIContainer>(name: "hierarchy");
+            //imguiHierarchy.cullingEnabled = false;
+            //imguiHierarchy.contextType = ContextType.Editor;
+            //imguiHierarchy.onGUIHandler = OnHierarchyGUI;
 
             BindToggle(uxml.Q<BaseField<bool>>("toggle-vertices"), () => _meshPreviewSettings.ShowVertices, x => _meshPreviewSettings.ShowVertices = x);
             BindToggle(uxml.Q<BaseField<bool>>("toggle-normals"), () => _meshPreviewSettings.ShowNormals, x => _meshPreviewSettings.ShowNormals = x);
@@ -291,7 +296,6 @@ namespace ZeludeEditor
         private void OnHierarchyGUI()
         {
             //_hierarchy.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
-            _modelImporterEditor.OnInspectorGUI();
         }
 
         private void OnGUI()
@@ -304,7 +308,6 @@ namespace ZeludeEditor
             if (_previewScene != null) _previewScene.Dispose();
             _registeredEditors.Remove(_guidString);
             if (_uvTexture != null) _uvTexture.Dispose();
-            if (_modelImporterEditor != null) DestroyImmediate(_modelImporterEditor, true);
             if (_previewGO != null) DestroyImmediate(_previewGO, true);
         }
 

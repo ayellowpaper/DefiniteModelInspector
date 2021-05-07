@@ -39,7 +39,7 @@
         </engine:VisualElement>
       </engine:IMGUIContainer>
     </engine:VisualElement>
-    <engine:VisualElement class="window-splitter"/>
-    <engine:IMGUIContainer name="hierarchy"/>
+    <!--<engine:VisualElement class="window-splitter"/>
+    <engine:IMGUIContainer name="hierarchy"/>-->
   </engine:VisualElement>
 </engine:UXML>

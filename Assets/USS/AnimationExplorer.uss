@@ -1,0 +1,44 @@
+ToolbarToggle {
+	flex-direction: row-reverse;
+	flex-basis: 0px;
+	flex-grow: 1;
+	justify-content: center;
+	-unity-font-style: bold;
+}
+
+ToolbarToggle > VisualElement {
+	flex-grow: 0;
+}
+
+ToolbarToggle > Image {
+	width: 16px;
+}
+
+#content {
+	flex-grow: 1;
+}
+
+#content > * {
+	flex-grow: 1;
+}
+
+ToolbarSearchField {
+	flex-grow: 1;
+}
+
+#search-count {
+	-unity-text-align: middle-center;
+	padding: 1px;
+	background-color: #3C3C3C;
+	-unity-font-style: bold;
+	border-color: #232323;
+	border-bottom-width: 1px;
+}
+
+#no-animations-found {
+	flex-grow: 0;
+	-unity-text-align: middle-center;
+	-unity-font-style: bold;
+	font-size: 14px;
+	padding-top: 4px;
+}

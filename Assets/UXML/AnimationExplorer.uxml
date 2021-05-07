@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:schemaLocation="UnityEditor.UIElements ../../../../UIElementsSchema/UnityEditor.UIElements.xsd
+    UnityEngine.UIElements ../../../../UIElementsSchema/UnityEngine.UIElements.xsd"
+>
+  <engine:Style src="../USS/AnimationExplorer.uss"/>
+  <editor:Toolbar>
+    <editor:ToolbarToggle name="toggle-human" text="Human">
+      <engine:Image/>
+    </editor:ToolbarToggle>
+    <editor:ToolbarToggle name="toggle-avatar" text="Avatar">
+      <engine:Image/>
+    </editor:ToolbarToggle>
+    <editor:ToolbarToggle name="toggle-asset" text="Asset">
+      <engine:Image/>
+    </editor:ToolbarToggle>
+    <editor:ToolbarToggle name="toggle-all" text="All">
+      <engine:Image/>
+    </editor:ToolbarToggle>
+  </editor:Toolbar>
+  <editor:Toolbar>
+    <editor:ToolbarSearchField></editor:ToolbarSearchField>
+    <editor:ToolbarSpacer></editor:ToolbarSpacer>
+  </editor:Toolbar>
+  <engine:TextElement name="search-count" text="68/245"/>
+  <engine:VisualElement name="content">
+    <engine:TextElement name="no-animations-found" text="No Animations found."/>
+  </engine:VisualElement>
+</engine:UXML>
