@@ -54,7 +54,7 @@ namespace ZeludeEditor
             _searchCountLabel = uxml.Q<TextElement>("search-count");
             _noAnimationsFoundElement = uxml.Q("no-animations-found");
             _noAnimationsFoundElement.style.display = DisplayStyle.None;
-            var humanFilter = new FilterCategory(uxml.Q<Toggle>("toggle-human"), () => GetAvatarFromAsset() is Avatar avatar && avatar.isHuman, AnimationDatabase.GetHumanClips);
+            var humanFilter = new FilterCategory(uxml.Q<Toggle>("toggle-human"), () => Asset == null ^ (GetAvatarFromAsset() is Avatar avatar && avatar.isHuman), AnimationDatabase.GetHumanClips);
             var avatarFilter = new FilterCategory(uxml.Q<Toggle>("toggle-avatar"), () => GetAvatarFromAsset() != null, () => AnimationDatabase.GetClipsForAvatar(GetAvatarFromAsset()));
             var assetFilter = new FilterCategory(uxml.Q<Toggle>("toggle-asset"), () => Asset != null, GetClipsOnAsset);
             var allFilter = new FilterCategory(uxml.Q<Toggle>("toggle-all"), () => true, AnimationDatabase.GetAllClips);
