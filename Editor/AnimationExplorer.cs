@@ -56,7 +56,7 @@ namespace ZeludeEditor
             _noAnimationsFoundElement.style.display = DisplayStyle.None;
             var humanFilter = new FilterCategory(uxml.Q<Toggle>("toggle-human"), () => Asset == null ^ (GetAvatarFromAsset() is Avatar avatar && avatar.isHuman), AnimationDatabase.GetHumanClips);
             var avatarFilter = new FilterCategory(uxml.Q<Toggle>("toggle-avatar"), () => GetAvatarFromAsset() != null, () => AnimationDatabase.GetClipsForAvatar(GetAvatarFromAsset()));
-            var assetFilter = new FilterCategory(uxml.Q<Toggle>("toggle-asset"), () => Asset != null, GetClipsOnAsset);
+            var assetFilter = new FilterCategory(uxml.Q<Toggle>("toggle-asset"), () => Asset != null && GetClipsOnAsset().Count() > 0, GetClipsOnAsset);
             var allFilter = new FilterCategory(uxml.Q<Toggle>("toggle-all"), () => true, AnimationDatabase.GetAllClips);
 
             SetCategoryImage(humanFilter.Toggle, "HumanTemplate Icon");
@@ -66,19 +66,17 @@ namespace ZeludeEditor
 
             _filterCategories = new List<FilterCategory>() { humanFilter, avatarFilter, assetFilter, allFilter };
 
-            SetCategoryActive(allFilter);
-
-            foreach (var info in _filterCategories)
+            foreach (var category in _filterCategories)
             {
-                info.Toggle.RegisterValueChangedCallback(evt => { _prefilteredList = info.GetClipsFunc(); Callback(evt); });
+                category.Toggle.RegisterValueChangedCallback(evt => CategoryToggleChanged(evt, category));
             }
+
+            SetFirstPossibleToggleActive();
 
             ListView = new ListView(_finalClips, ItemHeight, MakeItem, BindItem);
             ListView.selectionType = SelectionType.Single;
             uxml.Q("content").Add(ListView);
-
             uxml.Q<ToolbarSearchField>().RegisterValueChangedCallback(ToolbarSearchChanged);
-
             Add(uxml);
 
             UpdateCategoriesState();
@@ -90,6 +88,21 @@ namespace ZeludeEditor
             foreach (var category in _filterCategories)
             {
                 category.Toggle.SetEnabled(category.ValidationFunc());
+            }
+
+            if (!_activeToggle.enabledSelf)
+                SetFirstPossibleToggleActive();
+        }
+        
+        private void SetFirstPossibleToggleActive()
+        {
+            foreach (var category in _filterCategories)
+            {
+                if (category.Toggle.enabledSelf)
+                {
+                    SetCategoryActive(category);
+                    break;
+                }
             }
         }
 
@@ -109,6 +122,7 @@ namespace ZeludeEditor
 
         private void SetCategoryActive(FilterCategory category)
         {
+            if (_activeToggle != null) _activeToggle.SetValueWithoutNotify(false);
             category.Toggle.SetValueWithoutNotify(true);
             _prefilteredList = category.GetClipsFunc();
             _activeToggle = category.Toggle;
@@ -123,10 +137,12 @@ namespace ZeludeEditor
 
         private IEnumerable<AnimationClip> GetClipsOnAsset()
         {
+            if (Asset is AnimationClip clip)
+                yield return clip;
             var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(Asset));
             foreach (var subAsset in subAssets)
-                if (subAsset is AnimationClip clip)
-                    yield return clip;
+                if (subAsset is AnimationClip subClip)
+                    yield return subClip;
         }
 
         private void ToolbarSearchChanged(ChangeEvent<string> evt)
@@ -148,7 +164,7 @@ namespace ZeludeEditor
             _noAnimationsFoundElement.style.display = _finalClips.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        private void Callback(ChangeEvent<bool> evt)
+        private void CategoryToggleChanged(ChangeEvent<bool> evt, FilterCategory category)
         {
             if (evt.newValue == false)
             {
@@ -156,9 +172,14 @@ namespace ZeludeEditor
                 return;
             }
 
-            _activeToggle.SetValueWithoutNotify(false);
-            _activeToggle = evt.target as Toggle;
+            SetCategoryActive(category);
             UpdateList();
+        }
+
+        private void StartDrag(MouseDownEvent evt, int index)
+        {
+            DragAndDrop.objectReferences = new UnityEngine.Object[] { _finalClips[index] };
+            DragAndDrop.StartDrag($"Drag {_finalClips[index]}");
         }
 
         private void BindItem(VisualElement element, int index)
@@ -166,12 +187,6 @@ namespace ZeludeEditor
             element.UnregisterCallback<MouseDownEvent, int>(StartDrag);
             element.RegisterCallback<MouseDownEvent, int>(StartDrag, index);
             element.Q<Label>().text = _finalClips[index].name;
-        }
-
-        private void StartDrag(MouseDownEvent evt, int index)
-        {
-            DragAndDrop.objectReferences = new UnityEngine.Object[] { _finalClips[index] };
-            DragAndDrop.StartDrag($"Drag {_finalClips[index]}");
         }
 
         private VisualElement MakeItem()
