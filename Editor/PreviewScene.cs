@@ -83,7 +83,7 @@ namespace ZeludeEditor
                 Camera.Render();
             }
 
-            DoHandles(rect);
+            DoHandles();
 
             if (Event.current.type == EventType.Repaint)
                 Graphics.DrawTexture(rect, RenderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color, materialProperty.GetValue(null) as Material);
@@ -102,7 +102,7 @@ namespace ZeludeEditor
             }
         }
 
-        private void DoHandles(Rect rect)
+        private void DoHandles()
         {
             var prevTexture = RenderTexture.active;
             RenderTexture.active = RenderTexture;
@@ -111,7 +111,7 @@ namespace ZeludeEditor
             GL.modelview = Camera.worldToCameraMatrix;
             GL.LoadProjectionMatrix(Camera.projectionMatrix);
             HandleUtility.PushCamera(Camera);
-            Handles.SetCamera(rect, Camera);
+            Handles.SetCamera(Camera);
             OnDoHandles?.Invoke();
             HandleUtility.PopCamera(Camera);
             GL.PopMatrix();

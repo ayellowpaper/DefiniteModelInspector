@@ -33,6 +33,7 @@ namespace ZeludeEditor
         private MeshGroupDrawer _binormalDrawer;
         private MeshGroupDrawer _tangentDrawer;
         private AnimationExplorer _animationExplorer;
+        private IMGUIContainer _viewport;
 
         public UVTextureGenerator UVTexture => _uvTexture;
         public MeshGroup MeshGroup => _meshGroup;
@@ -175,10 +176,10 @@ namespace ZeludeEditor
             var groundTexture = AssetDatabase.LoadAssetAtPath<Texture>("Packages/com.zelude.meshpreview/Assets/Icons/Ground.png");
             uxml.Query<Image>(className: "ground-image").ForEach(img => UpdateToolbarImage(img, groundTexture));
             uxml.Query<Image>(className: "grid-image").ForEach(img => UpdateToolbarImage(img, gridTexture));
-            var imguiViewport = uxml.Q<IMGUIContainer>(name: "viewport");
-            imguiViewport.cullingEnabled = false;
-            imguiViewport.contextType = ContextType.Editor;
-            imguiViewport.onGUIHandler = OnViewportGUI;
+            _viewport = uxml.Q<IMGUIContainer>(name: "viewport");
+            _viewport.cullingEnabled = false;
+            _viewport.contextType = ContextType.Editor;
+            _viewport.onGUIHandler = OnViewportGUI;
 
             var detailsContainer = uxml.Q("details-container");
             detailsContainer.Add(_animationExplorer);
@@ -342,6 +343,10 @@ namespace ZeludeEditor
 
         private void DrawHandles()
         {
+            /// TODO: For some reason checking handles has an offset. The camera assumes some strange shit.
+            Vector2 offset = _viewport.LocalToWorld(Vector2.zero);
+            Event.current.mousePosition += offset;
+
             //rotation = Handles.RotationHandle(rotation, position);
             //position = Handles.PositionHandle(position, rotation);
             Handles.DoScaleHandle(Vector3.one, position, rotation, 1f);
@@ -353,6 +358,7 @@ namespace ZeludeEditor
             if (_meshPreviewSettings.ShowTangents) _tangentDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowBinormals) _binormalDrawer.Draw(_previewScene.Camera);
 
+            Event.current.mousePosition -= offset;
         }
 
         private void DrawGrid()
