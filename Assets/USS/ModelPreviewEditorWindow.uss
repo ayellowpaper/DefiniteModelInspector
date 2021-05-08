@@ -1,9 +1,5 @@
 #model-preview-window {
-	flex-direction: row;
-	flex-grow: 1;
-}
-
-#viewport-container {
+	flex-direction: column;
 	flex-grow: 1;
 }
 
@@ -52,7 +48,7 @@ Toolbar {
 }
 
 .window-splitter {
-	width: 2px;
+	width: 1px;
 	background-color: #191919;
 }
 
@@ -72,4 +68,31 @@ Toolbar {
 	-unity-text-align: middle-center;
 	-unity-font-style: bold;
 	padding: 3px;
+}
+
+#content-container {
+	flex-grow: 1;
+	flex-direction: row;
+}
+
+.panel {
+	flex-grow: 1;
+}
+
+.panel__title {
+	padding: 4px;
+	background-color: #505050;
+	border-width: 1px 0px;
+	border-color: #282828;
+	-unity-text-align: middle-center;
+	-unity-font-style: bold;
+}
+
+#left-sub-window {
+	width: 280px;
+}
+
+#blendshapes-panel {
+	flex-grow: 0;
+	flex-basis: 280px;
 }

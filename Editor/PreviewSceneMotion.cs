@@ -37,14 +37,17 @@ namespace ZeludeEditor
 
             if (!rect.Contains(current.mousePosition)) return;
 
-            if (HandleUtility.nearestControl != 0 || GUIUtility.hotControl != 0) return;
+            //if (HandleUtility.nearestControl != 0 || GUIUtility.hotControl != 0) return;
 
-            if (current.type == EventType.MouseDrag && current.button == 0)
+            if (Tools.viewTool == ViewTool.Orbit)
             {
-                PivotRotation = Quaternion.AngleAxis(current.delta.y * 0.003f * 57.29578f, PivotRotation * Vector3.right) * PivotRotation;
-                PivotRotation = Quaternion.AngleAxis(current.delta.x * 0.003f * 57.29578f, Vector3.up) * PivotRotation;
-                Pivot.rotation = PivotRotation;
-                Event.current.Use();
+                if (current.type == EventType.MouseDrag && current.button == 0)
+                {
+                    PivotRotation = Quaternion.AngleAxis(current.delta.y * 0.003f * 57.29578f, PivotRotation * Vector3.right) * PivotRotation;
+                    PivotRotation = Quaternion.AngleAxis(current.delta.x * 0.003f * 57.29578f, Vector3.up) * PivotRotation;
+                    Pivot.rotation = PivotRotation;
+                    Event.current.Use();
+                }
             }
 
             if (Tools.viewTool == ViewTool.Pan)

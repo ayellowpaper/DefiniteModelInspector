@@ -10,6 +10,7 @@ using System.IO;
 using UnityEditor.IMGUI.Controls;
 using System;
 using UnityEditor.AssetImporters;
+using System.Linq;
 
 namespace ZeludeEditor
 {
@@ -25,6 +26,7 @@ namespace ZeludeEditor
         private PreviewScene _previewScene;
         private MeshGroup _meshGroup;
         private MeshGroupHierarchy _hierarchy;
+        private BlendShapesList _blendShapes;
         private Material _handleMat;
         private UVTextureGenerator _uvTexture;
 
@@ -34,12 +36,9 @@ namespace ZeludeEditor
         private MeshGroupDrawer _tangentDrawer;
         private AnimationExplorer _animationExplorer;
         private IMGUIContainer _viewport;
-
         public UVTextureGenerator UVTexture => _uvTexture;
         public MeshGroup MeshGroup => _meshGroup;
 
-        [SerializeField]
-        private TreeViewState _treeViewState = new TreeViewState();
         [SerializeField]
         private PreviewSceneMotion _previewSceneMotion;
         [SerializeField]
@@ -106,6 +105,14 @@ namespace ZeludeEditor
 
         private void Initialize()
         {
+            // bind XML first
+            string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
+            var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
+            var uxml = template.Instantiate();
+            uxml.style.flexGrow = 1;
+            rootVisualElement.Add(uxml);
+
+            // do all the other stuff
             _animationExplorer = new AnimationExplorer();
             _animationExplorer.ListView.onSelectionChange += HandleAnimationExplorerSelectionChanged;
 
@@ -154,12 +161,6 @@ namespace ZeludeEditor
             _registeredEditors.Add(_guidString, this);
 
             // CREATE UXML HERE
-            string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
-            var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
-            var uxml = template.Instantiate();
-            uxml.style.flexGrow = 1;
-            rootVisualElement.Add(uxml);
-
             void BindToggle(BaseField<bool> toggle, Func<bool> getter, Action<bool> setter)
             {
                 toggle.value = getter();
@@ -181,12 +182,24 @@ namespace ZeludeEditor
             _viewport.contextType = ContextType.Editor;
             _viewport.onGUIHandler = OnViewportGUI;
 
-            var detailsContainer = uxml.Q("details-container");
-            detailsContainer.Add(_animationExplorer);
-            //var imguiHierarchy = uxml.Q<IMGUIContainer>(name: "hierarchy");
-            //imguiHierarchy.cullingEnabled = false;
-            //imguiHierarchy.contextType = ContextType.Editor;
-            //imguiHierarchy.onGUIHandler = OnHierarchyGUI;
+            var rightSubWindow = uxml.Q("right-sub-window");
+            rightSubWindow.Add(_animationExplorer);
+
+            var hierarchyPanel = uxml.Q("hierarchy-panel");
+            var hierarchyGui = new IMGUIContainer();
+            hierarchyPanel.Add(hierarchyGui);
+            hierarchyGui.cullingEnabled = false;
+            hierarchyGui.contextType = ContextType.Editor;
+            hierarchyGui.onGUIHandler = OnHierarchyGUI;
+            hierarchyGui.style.flexGrow = 1;
+
+            var blendShapesPanel = uxml.Q("blendshapes-panel");
+            var blendShapesGui = new IMGUIContainer();
+            blendShapesPanel.Add(blendShapesGui);
+            blendShapesGui.cullingEnabled = false;
+            blendShapesGui.contextType = ContextType.Editor;
+            blendShapesGui.onGUIHandler = OnBlendShapesGUI;
+            blendShapesGui.style.flexGrow = 1;
 
             BindToggle(uxml.Q<BaseField<bool>>("toggle-vertices"), () => _meshPreviewSettings.ShowVertices, x => _meshPreviewSettings.ShowVertices = x);
             BindToggle(uxml.Q<BaseField<bool>>("toggle-normals"), () => _meshPreviewSettings.ShowNormals, x => _meshPreviewSettings.ShowNormals = x);
@@ -249,7 +262,11 @@ namespace ZeludeEditor
             _previewGO.transform.position = Vector3.zero;
             _previewScene.AddSelfManagedGO(_previewGO);
             _meshGroup = new MeshGroup(_previewGO);
-            _hierarchy = new MeshGroupHierarchy(_meshGroup, _treeViewState);
+
+            _hierarchy = new MeshGroupHierarchy(_meshGroup, new TreeViewState());
+
+            bool hasBlendShapes = BlendShapesList.CreateFromRenderers(_previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true), new TreeViewState(), out _blendShapes);
+            rootVisualElement.Q("blendshapes-panel").style.display = hasBlendShapes ? DisplayStyle.Flex : DisplayStyle.None;
 
             _animationExplorer.Asset = _sourceGO;
 
@@ -311,7 +328,12 @@ namespace ZeludeEditor
 
         private void OnHierarchyGUI()
         {
-            //_hierarchy.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
+            _hierarchy.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
+        }
+
+        private void OnBlendShapesGUI()
+        {
+            _blendShapes?.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
         }
 
         private void OnGUI()
@@ -338,14 +360,11 @@ namespace ZeludeEditor
             return bounds;
         }
 
-        static Vector3 position = Vector3.zero;
-        static Quaternion rotation = Quaternion.identity;
-        static Vector3 scale = Vector3.one;
-
         private void DrawHandles()
         {
-            /// TODO: For some reason checking handles has an offset. The camera assumes some strange shit.
+            /// TODO: For some reason checking handle interaction has an offset in the y axis
             Vector2 offset = _viewport.LocalToWorld(Vector2.zero);
+            offset.x = 0f;
             Event.current.mousePosition += offset;
 
             _handleMat.SetPass(0);
@@ -355,16 +374,41 @@ namespace ZeludeEditor
             if (_meshPreviewSettings.ShowTangents) _tangentDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowBinormals) _binormalDrawer.Draw(_previewScene.Camera);
 
-            Handles.CubeHandleCap(0, position, rotation, scale.magnitude, EventType.Repaint);
-            if (Tools.current == Tool.Move)
-                position = Handles.PositionHandle(position, rotation);
-            else if (Tools.current == Tool.Rotate)
-                rotation = Handles.RotationHandle(rotation, position);
-            else if (Tools.current == Tool.Scale)
-                scale = Handles.DoScaleHandle(scale, position, rotation, 1f);
+            DoToolHandles();
 
             Event.current.mousePosition -= offset;
         }
+
+        private void DoToolHandles()
+        {
+            var selection = _hierarchy.GetSelectedObjects();
+            Vector3 position = Vector3.zero;
+            foreach (var go in selection)
+            {
+                position += go.transform.position;
+            }
+            position /= selection.Count();
+
+            var rotation = Quaternion.identity;
+
+            var tool = GetActiveManipulationTool();
+            tool.DoTool(position, rotation, selection);
+        }
+
+        private void HandleDeselect()
+        {
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            {
+                _hierarchy.SetSelection(new List<int>());
+            }
+        }
+
+        private ManipulationTool GetActiveManipulationTool() => Tools.current switch
+        {
+            Tool.Rotate => ManipulationTool.Get<RotateTool>(),
+            Tool.Scale => ManipulationTool.Get<ScaleTool>(),
+            _ => ManipulationTool.Get<MoveTool>(),
+        };
 
         private void DrawGrid()
         {

@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
+using System.Linq;
 
 namespace ZeludeEditor
 {
     public class MeshGroupHierarchy : TreeView
     {
         public readonly MeshGroup MeshGroup;
+
+        public event System.EventHandler OnSelectionChanged;
 
         public MeshGroupHierarchy(MeshGroup meshGroup, TreeViewState state) : base(state)
         {
@@ -27,14 +30,23 @@ namespace ZeludeEditor
             return root;
         }
 
+        public override void OnGUI(Rect rect)
+        {
+            base.OnGUI(rect);
+            if (GUI.Button(rect, "", GUIStyle.none))
+            {
+                this.SetSelection(new List<int>());
+            }
+        }
+
         private void AddChild(MeshGroupNode node, TreeViewItem parent)
         {
             var item = new TreeViewItem(node.GameObject.GetInstanceID(), -1, node.GameObject.name);
             //item.icon = EditorGUIUtility.LoadRequired("d_MeshRenderer Icon") as Texture2D;
             if (node.MeshInfo != null)
-            {
                 item.icon = EditorGUIUtility.ObjectContent(node.MeshInfo.Renderer, typeof(Renderer)).image as Texture2D;
-            }
+            else
+                item.icon = EditorGUIUtility.LoadRequired("d_Transform Icon") as Texture2D;
             parent.AddChild(item);
             foreach (var child in node.Children)
             {
@@ -42,10 +54,18 @@ namespace ZeludeEditor
             }
         }
 
+        public GameObject InstanceIDToObject(int id) => EditorUtility.InstanceIDToObject(id) as GameObject;
+
+        public IEnumerable<GameObject> GetSelectedObjects()
+        {
+            foreach (var id in state.selectedIDs)
+                yield return InstanceIDToObject(id);
+        }
 
         protected override void SelectionChanged(IList<int> selectedIds)
         {
             base.SelectionChanged(selectedIds);
+            OnSelectionChanged?.Invoke(this, System.EventArgs.Empty);
         }
 
         protected override void RowGUI(RowGUIArgs args)
