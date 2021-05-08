@@ -37,6 +37,8 @@ namespace ZeludeEditor
 
             if (!rect.Contains(current.mousePosition)) return;
 
+            if (HandleUtility.nearestControl != 0 || GUIUtility.hotControl != 0) return;
+
             if (current.type == EventType.MouseDrag && current.button == 0)
             {
                 PivotRotation = Quaternion.AngleAxis(current.delta.y * 0.003f * 57.29578f, PivotRotation * Vector3.right) * PivotRotation;

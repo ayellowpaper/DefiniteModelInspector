@@ -340,6 +340,7 @@ namespace ZeludeEditor
 
         static Vector3 position = Vector3.zero;
         static Quaternion rotation = Quaternion.identity;
+        static Vector3 scale = Vector3.one;
 
         private void DrawHandles()
         {
@@ -347,16 +348,20 @@ namespace ZeludeEditor
             Vector2 offset = _viewport.LocalToWorld(Vector2.zero);
             Event.current.mousePosition += offset;
 
-            //rotation = Handles.RotationHandle(rotation, position);
-            //position = Handles.PositionHandle(position, rotation);
-            Handles.DoScaleHandle(Vector3.one, position, rotation, 1f);
-
             _handleMat.SetPass(0);
             if (_meshPreviewSettings.ShowGrid) DrawGrid();
             if (_meshPreviewSettings.ShowNormals) _normalDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowVertices) _vertexDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowTangents) _tangentDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowBinormals) _binormalDrawer.Draw(_previewScene.Camera);
+
+            Handles.CubeHandleCap(0, position, rotation, scale.magnitude, EventType.Repaint);
+            if (Tools.current == Tool.Move)
+                position = Handles.PositionHandle(position, rotation);
+            else if (Tools.current == Tool.Rotate)
+                rotation = Handles.RotationHandle(rotation, position);
+            else if (Tools.current == Tool.Scale)
+                scale = Handles.DoScaleHandle(scale, position, rotation, 1f);
 
             Event.current.mousePosition -= offset;
         }
