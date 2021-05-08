@@ -65,3 +65,11 @@ Toolbar {
 	padding-right: 4px;
 	margin: 0px;
 }
+
+#asset-button {
+	border-width: 0px 0px 1px 0px;
+	margin: 0px;
+	-unity-text-align: middle-center;
+	-unity-font-style: bold;
+	padding: 3px;
+}

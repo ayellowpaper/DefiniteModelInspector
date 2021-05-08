@@ -32,6 +32,7 @@ namespace ZeludeEditor
         private MeshGroupDrawer _normalDrawer;
         private MeshGroupDrawer _binormalDrawer;
         private MeshGroupDrawer _tangentDrawer;
+        private AnimationExplorer _animationExplorer;
 
         public UVTextureGenerator UVTexture => _uvTexture;
         public MeshGroup MeshGroup => _meshGroup;
@@ -104,6 +105,9 @@ namespace ZeludeEditor
 
         private void Initialize()
         {
+            _animationExplorer = new AnimationExplorer();
+            _animationExplorer.ListView.onSelectionChange += HandleAnimationExplorerSelectionChanged;
+
             _assetPath = AssetDatabase.GUIDToAssetPath(_guidString);
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
             var modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
@@ -120,7 +124,7 @@ namespace ZeludeEditor
             titleContent = new GUIContent(_sourceGO.name, AssetPreview.GetAssetPreview(_sourceGO));
             _previewScene = new PreviewScene();
             ReloadMesh();
-            _previewScene.OnDrawHandles += DrawHandles;
+            _previewScene.OnDoHandles += DrawHandles;
 
             var bounds = CalculateBounds(_previewGO);
 
@@ -147,8 +151,6 @@ namespace ZeludeEditor
             _binormalDrawer = new BinormalDrawer(_meshGroup);
 
             _registeredEditors.Add(_guidString, this);
-
-            
 
             // CREATE UXML HERE
             string path = "Packages/com.zelude.meshpreview/Assets/UXML/ModelPreviewEditorWindow.uxml";
@@ -178,6 +180,8 @@ namespace ZeludeEditor
             imguiViewport.contextType = ContextType.Editor;
             imguiViewport.onGUIHandler = OnViewportGUI;
 
+            var detailsContainer = uxml.Q("details-container");
+            detailsContainer.Add(_animationExplorer);
             //var imguiHierarchy = uxml.Q<IMGUIContainer>(name: "hierarchy");
             //imguiHierarchy.cullingEnabled = false;
             //imguiHierarchy.contextType = ContextType.Editor;
@@ -195,7 +199,9 @@ namespace ZeludeEditor
             uxml.Q("viewport-stats").Add(CreateStatsRow("Vertices", "vertex-count"));
             uxml.Q("viewport-stats").Add(CreateStatsRow("Tris", "tri-count"));
 
-            uxml.Q<Button>("ping-asset").clicked += () =>
+            var assetButton = uxml.Q<Button>("asset-button");
+            assetButton.text = _sourceGO.name;
+            assetButton.clicked += () =>
             {
                 EditorUtility.FocusProjectWindow();
                 EditorGUIUtility.PingObject(_sourceGO);
@@ -205,6 +211,13 @@ namespace ZeludeEditor
             ToggleUVWindow(false);
             uxml.Q<BaseField<bool>>("toggle-uv").RegisterValueChangedCallback(x => ToggleUVWindow(x.newValue));
             uxml.Q<ToolbarMenu>("toggle-uv-menu").RegisterCallback<MouseUpEvent>(x => ShowUVPopup());
+        }
+
+        private void HandleAnimationExplorerSelectionChanged(IEnumerable<object> items)
+        {
+            foreach (var item in items)
+            {
+            }
         }
 
         private void ShowUVPopup()
@@ -236,6 +249,8 @@ namespace ZeludeEditor
             _previewScene.AddSelfManagedGO(_previewGO);
             _meshGroup = new MeshGroup(_previewGO);
             _hierarchy = new MeshGroupHierarchy(_meshGroup, _treeViewState);
+
+            _animationExplorer.Asset = _sourceGO;
 
             _uvTexture = new UVTextureGenerator();
             foreach (var meshinfo in _meshGroup.MeshInfos)
@@ -322,14 +337,22 @@ namespace ZeludeEditor
             return bounds;
         }
 
+        static Vector3 position = Vector3.zero;
+        static Quaternion rotation = Quaternion.identity;
+
         private void DrawHandles()
         {
+            //rotation = Handles.RotationHandle(rotation, position);
+            //position = Handles.PositionHandle(position, rotation);
+            Handles.DoScaleHandle(Vector3.one, position, rotation, 1f);
+
             _handleMat.SetPass(0);
             if (_meshPreviewSettings.ShowGrid) DrawGrid();
             if (_meshPreviewSettings.ShowNormals) _normalDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowVertices) _vertexDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowTangents) _tangentDrawer.Draw(_previewScene.Camera);
             if (_meshPreviewSettings.ShowBinormals) _binormalDrawer.Draw(_previewScene.Camera);
+
         }
 
         private void DrawGrid()

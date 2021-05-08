@@ -66,7 +66,6 @@ namespace ZeludeEditor
                     //EditorGUIUtility.pixelsPerPoint;
 
                     Pivot.position += (prevPoint - newPoint);
-
                     Event.current.Use();
                 }
             }

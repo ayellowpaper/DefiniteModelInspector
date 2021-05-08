@@ -29,8 +29,8 @@
           <engine:AttributeOverrides element-name="toggle-menu" name="toggle-uv-menu" />
         </engine:Instance>
         <editor:ToolbarSpacer style="flex-grow: 1"></editor:ToolbarSpacer>
-        <editor:ToolbarButton text="Ping Asset" name="ping-asset"/>
       </editor:Toolbar>
+      <editor:ToolbarButton name="asset-button"/>
       <engine:IMGUIContainer name="viewport">
         <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
         </engine:VisualElement>
@@ -39,7 +39,7 @@
         </engine:VisualElement>
       </engine:IMGUIContainer>
     </engine:VisualElement>
-    <!--<engine:VisualElement class="window-splitter"/>
-    <engine:IMGUIContainer name="hierarchy"/>-->
+    <engine:VisualElement class="window-splitter"/>
+    <engine:VisualElement name="details-container"/>
   </engine:VisualElement>
 </engine:UXML>

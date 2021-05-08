@@ -14,7 +14,7 @@ namespace ZeludeEditor
         public readonly Camera Camera;
         public RenderTexture RenderTexture { get; private set; }
 
-        public event System.Action OnDrawHandles;
+        public event System.Action OnDoHandles;
 
         private readonly List<GameObject> _gameObjects = new List<GameObject>();
 
@@ -54,7 +54,7 @@ namespace ZeludeEditor
             }
             if (RenderTexture != null) Object.DestroyImmediate(RenderTexture, true);
             _gameObjects.Clear();
-            OnDrawHandles = null;
+            OnDoHandles = null;
         }
 
         public void AddGameObject(GameObject go)
@@ -81,10 +81,12 @@ namespace ZeludeEditor
                 Camera.targetTexture = RenderTexture;
                 Camera.pixelRect = new Rect(0f, 0f, rect.width, rect.height);
                 Camera.Render();
-                DrawHandles();
-
-                Graphics.DrawTexture(rect, RenderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color, materialProperty.GetValue(null) as Material);
             }
+
+            DoHandles(rect);
+
+            if (Event.current.type == EventType.Repaint)
+                Graphics.DrawTexture(rect, RenderTexture, new Rect(0f, 0f, 1f, 1f), 0, 0, 0, 0, GUI.color, materialProperty.GetValue(null) as Material);
         }
 
         private void UpdateRenderTexture(int width, int height)
@@ -100,7 +102,7 @@ namespace ZeludeEditor
             }
         }
 
-        private void DrawHandles()
+        private void DoHandles(Rect rect)
         {
             var prevTexture = RenderTexture.active;
             RenderTexture.active = RenderTexture;
@@ -108,7 +110,10 @@ namespace ZeludeEditor
             GL.PushMatrix();
             GL.modelview = Camera.worldToCameraMatrix;
             GL.LoadProjectionMatrix(Camera.projectionMatrix);
-            OnDrawHandles?.Invoke();
+            HandleUtility.PushCamera(Camera);
+            Handles.SetCamera(rect, Camera);
+            OnDoHandles?.Invoke();
+            HandleUtility.PopCamera(Camera);
             GL.PopMatrix();
 
             RenderTexture.active = prevTexture;
