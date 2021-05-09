@@ -124,8 +124,8 @@ namespace ZeludeEditor
 
         public AnimationClipInfo(AnimationClip animationClip)
         {
-            AvatarName = "";
-            Avatar = new LazyLoadReference<Avatar>();
+            AvatarName = null;
+            Avatar = null;
             AnimationClipName = animationClip.name;
             AnimationClip = new LazyLoadReference<AnimationClip>(animationClip);
         }

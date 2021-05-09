@@ -186,7 +186,8 @@ namespace ZeludeEditor
         {
             element.UnregisterCallback<MouseDownEvent, int>(StartDrag);
             element.RegisterCallback<MouseDownEvent, int>(StartDrag, index);
-            element.Q<Label>().text = _finalClips[index].AnimationClipName;
+            var info = _finalClips[index];
+            element.Q<Label>().text = info.AnimationClipName;
         }
 
         private VisualElement MakeItem()

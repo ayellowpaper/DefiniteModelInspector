@@ -20,12 +20,24 @@ namespace ZeludeEditor
 
         private void OnEnable()
         {
+            var animationExplorer = new AnimationExplorer();
+
             this.titleContent = new GUIContent("Animation Explorer");
             var objectField = new ObjectField("Target Asset");
             objectField.objectType = typeof(UnityEngine.Object);
-            var animationExplorer = new AnimationExplorer();
-            objectField.RegisterValueChangedCallback(x => animationExplorer.Asset = x.newValue);
-            rootVisualElement.Add(objectField);
+            objectField.RegisterValueChangedCallback(evt => animationExplorer.Asset = evt.newValue);
+
+            var clearButton = new Button(() => objectField.value = null);
+            clearButton.text = "Clear";
+
+            var header = new VisualElement();
+            header.Add(objectField);
+            header.Add(clearButton);
+            header.style.flexDirection = FlexDirection.Row;
+            objectField.style.flexGrow = 1;
+            clearButton.style.width = 80;
+
+            rootVisualElement.Add(header);
             rootVisualElement.Add(animationExplorer);
 
             animationExplorer.ListView.onSelectionChange += ListView_onSelectionChange;
