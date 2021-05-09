@@ -50,7 +50,7 @@ namespace ZeludeEditor
                 if (item is AnimationClipInfo info)
                 {
                     EditorUtility.FocusProjectWindow();
-                    EditorGUIUtility.PingObject(info.AnimationClip.asset);
+                    EditorGUIUtility.PingObject(info.AnimationClip.instanceID);
                 }
             }
         }
