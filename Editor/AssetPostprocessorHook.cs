@@ -9,10 +9,10 @@ namespace ZeludeEditor
     {
         void OnPostprocessModel(GameObject gameObject)
         {
-            if (MeshPreviewEditorWindow.RegisteredEditors.Count == 0) return;
+            if (ModelPreviewEditorWindow.RegisteredEditors.Count == 0) return;
 
             var guid = AssetDatabase.AssetPathToGUID(assetPath);
-            if (MeshPreviewEditorWindow.TryGetWindowByGuid(guid, out var window))
+            if (ModelPreviewEditorWindow.TryGetWindowByGuid(guid, out var window))
             {
                 EditorApplication.delayCall += () => window.ReloadMesh();
             }

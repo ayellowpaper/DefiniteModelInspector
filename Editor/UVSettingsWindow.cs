@@ -10,10 +10,10 @@ namespace ZeludeEditor
 {
     public class UVSettingsWindow : PopupWindowContent
     {
-        private MeshPreviewEditorWindow _window;
+        private ModelPreviewEditorWindow _window;
         private bool[] _availableUVs;
 
-        public UVSettingsWindow(MeshPreviewEditorWindow window)
+        public UVSettingsWindow(ModelPreviewEditorWindow window)
         {
             _window = window;
             var meshinfos = _window.UVTexture.MeshInfos;

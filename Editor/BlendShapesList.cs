@@ -67,7 +67,7 @@ namespace ZeludeEditor
                 rect.xMin += GetContentIndent(blendShapeItem);
                 EditorGUIUtility.labelWidth = 80;
                 EditorGUI.BeginChangeCheck();
-                var newValue = EditorGUI.Slider(rect, blendShapeItem.displayName, blendShapeItem.Renderer.GetBlendShapeWeight(blendShapeItem.BlendShapeIndex), 0f, 100f);
+                var newValue = EditorGUI.Slider(rect, blendShapeItem.displayName, blendShapeItem.Renderer.GetBlendShapeWeight(blendShapeItem.BlendShapeIndex), blendShapeItem.MinValue, blendShapeItem.MaxValue);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(blendShapeItem.Renderer, "Blendshape");
@@ -82,6 +82,8 @@ namespace ZeludeEditor
         {
             public SkinnedMeshRenderer Renderer;
             public int BlendShapeIndex;
+            public float MinValue = 0;
+            public float MaxValue = 100;
 
             public BlendShapeItem(int id, int depth, string displayName, int blendShapeIndex, SkinnedMeshRenderer renderer) : base(id, depth, displayName)
             {

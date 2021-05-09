@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace ZeludeEditor
 {
-    public class MeshPreviewEditorWindow : EditorWindow
+    public class ModelPreviewEditorWindow : EditorWindow
     {
         [SerializeField]
         private string _guidString;
@@ -43,9 +43,9 @@ namespace ZeludeEditor
         [SerializeField]
         private MeshPreviewSettings _meshPreviewSettings;
 
-        public static IReadOnlyDictionary<string, MeshPreviewEditorWindow> RegisteredEditors => _registeredEditors;
+        public static IReadOnlyDictionary<string, ModelPreviewEditorWindow> RegisteredEditors => _registeredEditors;
 
-        private static Dictionary<string, MeshPreviewEditorWindow> _registeredEditors = new Dictionary<string, MeshPreviewEditorWindow>();
+        private static Dictionary<string, ModelPreviewEditorWindow> _registeredEditors = new Dictionary<string, ModelPreviewEditorWindow>();
 
         [System.Serializable]
         public class MeshPreviewSettings
@@ -74,7 +74,7 @@ namespace ZeludeEditor
             }
             else
             {
-                var window = CreateWindow<MeshPreviewEditorWindow>(new Type[] { typeof(MeshPreviewEditorWindow), typeof(SceneView) });
+                var window = CreateWindow<ModelPreviewEditorWindow>(new Type[] { typeof(ModelPreviewEditorWindow), typeof(SceneView) });
                 window._guidString = guidString;
                 window.Initialize();
                 window.Focus();
@@ -83,11 +83,11 @@ namespace ZeludeEditor
         }
 
         public static bool HasWindow(string guid) => _registeredEditors.ContainsKey(guid);
-        public static bool TryGetWindowByGuid(string guid, out MeshPreviewEditorWindow result) => _registeredEditors.TryGetValue(guid, out result);
+        public static bool TryGetWindowByGuid(string guid, out ModelPreviewEditorWindow result) => _registeredEditors.TryGetValue(guid, out result);
 
-        public static MeshPreviewEditorWindow GetWindowByGuid(string guid)
+        public static ModelPreviewEditorWindow GetWindowByGuid(string guid)
         {
-            _registeredEditors.TryGetValue(guid, out MeshPreviewEditorWindow value);
+            _registeredEditors.TryGetValue(guid, out ModelPreviewEditorWindow value);
             return value;
         }
 
@@ -243,22 +243,23 @@ namespace ZeludeEditor
 
         public void ReloadMesh()
         {
-            if (_previewGO != null)
+            if (_previewGO == null)
             {
-                DestroyImmediate(_previewGO, true);
+                _previewGO = PrefabUtility.InstantiatePrefab(_sourceGO) as GameObject;
+                _previewGO.transform.position = Vector3.zero;
+                _previewScene.AddSelfManagedGO(_previewGO);
             }
 
-            _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
-            _previewGO = Instantiate(_sourceGO);
-            _previewGO.name = _sourceGO.name;
-            _previewGO.transform.position = Vector3.zero;
-            _previewScene.AddSelfManagedGO(_previewGO);
             _meshGroup = new MeshGroup(_previewGO);
 
             _hierarchy = new MeshGroupHierarchy(_meshGroup, new TreeViewState());
 
             bool hasBlendShapes = BlendShapesList.CreateFromRenderers(_previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true), new TreeViewState(), out _blendShapes);
-            rootVisualElement.Q("blendshapes-pane").style.display = hasBlendShapes ? DisplayStyle.Flex : DisplayStyle.None;
+            var detailsPane = rootVisualElement.Q<TwoPaneSplitView>("details-pane");
+            if (hasBlendShapes)
+                detailsPane.UnCollapse();
+            else
+                detailsPane.CollapseChild(1);
 
             _uvTexture = new UVTextureGenerator();
             foreach (var meshinfo in _meshGroup.MeshInfos)
