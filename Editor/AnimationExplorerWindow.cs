@@ -11,7 +11,7 @@ namespace ZeludeEditor
 {
     public class AnimationExplorerWindow : EditorWindow
     {
-        [MenuItem("Window/Animation Explorer Window")]
+        [MenuItem("Window/Animation/Animation Explorer Window")]
         public static void OpenAnimationExplorerWindow()
         {
             var window = GetWindow<AnimationExplorerWindow>();
@@ -46,8 +46,13 @@ namespace ZeludeEditor
         private void ListView_onSelectionChange(IEnumerable<object> items)
         {
             foreach (var item in items)
-                if (item is UnityEngine.Object asset)
-                    EditorGUIUtility.PingObject(asset);
+            {
+                if (item is AnimationClipInfo info)
+                {
+                    EditorUtility.FocusProjectWindow();
+                    EditorGUIUtility.PingObject(info.AnimationClip.asset);
+                }
+            }
         }
     }
 }

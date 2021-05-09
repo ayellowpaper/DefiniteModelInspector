@@ -119,17 +119,21 @@ namespace ZeludeEditor
         /// At last it will check if the asset is a model and references an avatar in another asset and return that.
         /// If all fails returns null.
         /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
         public static Avatar GetAvatarFromAsset(Object asset)
         {
-            if (asset == null || !EditorUtility.IsPersistent(asset)) return null;
             if (asset is Avatar avatar) return avatar;
 
+            // get avatar from animator if possible
+            GameObject go = asset as GameObject;
+            if (asset is Component comp) go = comp.gameObject;
+            if (go != null && go.GetComponentInChildren<Animator>(true) is Animator animator && animator.avatar != null) return animator.avatar;
+
+            // get embedded avatar
             var path = AssetDatabase.GetAssetPath(asset);
             var embeddedAvatar = AssetDatabase.LoadAssetAtPath<Avatar>(path);
             if (embeddedAvatar != null) return embeddedAvatar;
 
+            // get avatar from redirected asset
             var importer = AssetImporter.GetAtPath(path);
             if (importer is ModelImporter modelImporter
                 && (modelImporter.animationType == ModelImporterAnimationType.Generic || modelImporter.animationType == ModelImporterAnimationType.Human)
@@ -139,9 +143,12 @@ namespace ZeludeEditor
             return null;
         }
 
+        /// <summary>
+        /// Returns the asset itself if it is a clip, and all clips embedded in the asset.
+        /// </summary>
         public static IEnumerable<AnimationClip> GetClipsInAsset(Object asset)
         {
-            if (asset == null || !EditorUtility.IsPersistent(asset)) yield break;
+            if (!EditorUtility.IsPersistent(asset)) yield break;
             if (asset is AnimationClip clip)
                 yield return clip;
             var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(asset));

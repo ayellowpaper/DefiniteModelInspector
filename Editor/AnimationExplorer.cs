@@ -92,6 +92,9 @@ namespace ZeludeEditor
 
             if (!_activeToggle.enabledSelf)
                 SetFirstPossibleToggleActive();
+
+            var avatar = AnimationDatabase.GetAvatarFromAsset(Asset);
+            this.Q<Toggle>("toggle-avatar").text = avatar != null ? avatar.name : "Avatar";
         }
         
         private void SetFirstPossibleToggleActive()
@@ -180,6 +183,8 @@ namespace ZeludeEditor
 
             return container;
         }
+
+        public AnimationClipInfo GetClipInfoByIndex(int index) => _finalClips[index];
 
         private class FilterCategory
         {
