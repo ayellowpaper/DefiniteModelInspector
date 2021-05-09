@@ -31,14 +31,14 @@
     </editor:Toolbar>
     <editor:ToolbarButton name="asset-button"/>
     <engine:TwoPaneSplitView name="content-container" fixed-pane-index="0" fixed-pane-initial-dimension="300">
-      <engine:TwoPaneSplitView name="left-sub-window" class="sub-window" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="300">
-        <engine:VisualElement name="hierarchy-panel" class="panel">
-          <engine:TextElement text="Hierarchy" class="panel__title panel__title--thin-top"/>
-          <engine:VisualElement name="hierarchy-panel__content" class="panel__content"/>
+      <engine:TwoPaneSplitView name="details-pane" class="pane" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="200">
+        <engine:VisualElement name="hierarchy-pane" class="pane">
+          <engine:TextElement text="Hierarchy" class="pane__title pane__title--thin-top"/>
+          <engine:VisualElement name="hierarchy-pane__content" class="pane__content"/>
         </engine:VisualElement>
-        <engine:VisualElement name="blendshapes-panel" class="panel">
-          <engine:TextElement text="Blendshapes" class="panel__title"/>
-          <engine:VisualElement name="blendshapes-panel__content" class="panel__content"/>
+        <engine:VisualElement name="blendshapes-pane" class="pane">
+          <engine:TextElement text="Blendshapes" class="pane__title"/>
+          <engine:VisualElement name="blendshapes-pane__content" class="pane__content"/>
         </engine:VisualElement>
       </engine:TwoPaneSplitView>
       <engine:IMGUIContainer name="viewport">

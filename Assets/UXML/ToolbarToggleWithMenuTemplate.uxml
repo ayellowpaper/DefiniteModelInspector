@@ -3,10 +3,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:engine="UnityEngine.UIElements"
     xmlns:editor="UnityEditor.UIElements"
-    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
+    xsi:schemaLocation="UnityEditor.UIElements ../../../../UIElementsSchema/UnityEditor.UIElements.xsd
+    UnityEngine.UIElements ../../../../UIElementsSchema/UnityEngine.UIElements.xsd"
 >
-  <Style src="../USS/ToolbarToggleWithMenuTemplate.uss" />
-  <editor:ToolbarToggle name="toggle" class="toggle-with-menu__toggle">
+  <engine:Style src="../USS/ToolbarToggleWithMenuTemplate.uss" />
+  <editor:ToolbarToggle name="toggle" class="toggle-with-menu__toggle" content-container="true">
     <editor:ToolbarMenu name="toggle-menu" class="toggle-with-menu__menu"/>
   </editor:ToolbarToggle>
 </engine:UXML>

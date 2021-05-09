@@ -177,17 +177,17 @@ namespace ZeludeEditor
             _viewport.contextType = ContextType.Editor;
             _viewport.onGUIHandler = OnViewportGUI;
 
-            var hierarchyPanel = uxml.Q("hierarchy-panel__content");
+            var hierarchyPane = uxml.Q("hierarchy-pane__content");
             var hierarchyGui = new IMGUIContainer();
-            hierarchyPanel.Add(hierarchyGui);
+            hierarchyPane.Add(hierarchyGui);
             hierarchyGui.cullingEnabled = false;
             hierarchyGui.contextType = ContextType.Editor;
             hierarchyGui.onGUIHandler = OnHierarchyGUI;
             hierarchyGui.style.flexGrow = 1;
 
-            var blendShapesPanel = uxml.Q("blendshapes-panel__content");
+            var blendShapesPane = uxml.Q("blendshapes-pane__content");
             var blendShapesGui = new IMGUIContainer();
-            blendShapesPanel.Add(blendShapesGui);
+            blendShapesPane.Add(blendShapesGui);
             blendShapesGui.cullingEnabled = false;
             blendShapesGui.contextType = ContextType.Editor;
             blendShapesGui.onGUIHandler = OnBlendShapesGUI;
@@ -258,7 +258,7 @@ namespace ZeludeEditor
             _hierarchy = new MeshGroupHierarchy(_meshGroup, new TreeViewState());
 
             bool hasBlendShapes = BlendShapesList.CreateFromRenderers(_previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true), new TreeViewState(), out _blendShapes);
-            rootVisualElement.Q("blendshapes-panel").style.display = hasBlendShapes ? DisplayStyle.Flex : DisplayStyle.None;
+            rootVisualElement.Q("blendshapes-pane").style.display = hasBlendShapes ? DisplayStyle.Flex : DisplayStyle.None;
 
             _uvTexture = new UVTextureGenerator();
             foreach (var meshinfo in _meshGroup.MeshInfos)
