@@ -88,6 +88,10 @@ Toolbar {
 	-unity-font-style: bold;
 }
 
+.panel__title--thin-top {
+	border-top-width: 0px;
+}
+
 #left-sub-window {
 	width: 280px;
 }

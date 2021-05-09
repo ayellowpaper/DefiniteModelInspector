@@ -34,7 +34,6 @@ namespace ZeludeEditor
         private MeshGroupDrawer _normalDrawer;
         private MeshGroupDrawer _binormalDrawer;
         private MeshGroupDrawer _tangentDrawer;
-        private AnimationExplorer _animationExplorer;
         private IMGUIContainer _viewport;
         public UVTextureGenerator UVTexture => _uvTexture;
         public MeshGroup MeshGroup => _meshGroup;
@@ -112,10 +111,6 @@ namespace ZeludeEditor
             uxml.style.flexGrow = 1;
             rootVisualElement.Add(uxml);
 
-            // do all the other stuff
-            _animationExplorer = new AnimationExplorer();
-            _animationExplorer.ListView.onSelectionChange += HandleAnimationExplorerSelectionChanged;
-
             _assetPath = AssetDatabase.GUIDToAssetPath(_guidString);
             _sourceGO = AssetDatabase.LoadAssetAtPath<GameObject>(_assetPath);
             var modelImporter = AssetImporter.GetAtPath(_assetPath) as ModelImporter;
@@ -181,9 +176,6 @@ namespace ZeludeEditor
             _viewport.cullingEnabled = false;
             _viewport.contextType = ContextType.Editor;
             _viewport.onGUIHandler = OnViewportGUI;
-
-            var rightSubWindow = uxml.Q("right-sub-window");
-            rightSubWindow.Add(_animationExplorer);
 
             var hierarchyPanel = uxml.Q("hierarchy-panel");
             var hierarchyGui = new IMGUIContainer();
@@ -267,8 +259,6 @@ namespace ZeludeEditor
 
             bool hasBlendShapes = BlendShapesList.CreateFromRenderers(_previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true), new TreeViewState(), out _blendShapes);
             rootVisualElement.Q("blendshapes-panel").style.display = hasBlendShapes ? DisplayStyle.Flex : DisplayStyle.None;
-
-            _animationExplorer.Asset = _sourceGO;
 
             _uvTexture = new UVTextureGenerator();
             foreach (var meshinfo in _meshGroup.MeshInfos)

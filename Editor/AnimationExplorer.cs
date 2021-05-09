@@ -13,8 +13,7 @@ namespace ZeludeEditor
     {
         public const int ItemHeight = 16;
 
-        public UnityEngine.Object Asset
-        {
+        public UnityEngine.Object Asset {
             get => _asset;
             set {
                 if (_asset == value) return;
@@ -23,6 +22,17 @@ namespace ZeludeEditor
                 UpdateList();
             }
         }
+
+        public bool OpenAssetsOnDoubleClick {
+            get => _openAssetsOnDoubleClick;
+            set {
+                if (_openAssetsOnDoubleClick == value) return;
+                _openAssetsOnDoubleClick = value;
+                UpdateDoubleClickBinding();
+            }
+        }
+
+        public bool HasContextClick { get; set; } = true;
 
         public ListView ListView { get; private set; }
 
@@ -35,6 +45,8 @@ namespace ZeludeEditor
         private Toggle _activeToggle;
         private List<FilterCategory> _filterCategories;
         private UnityEngine.Object _asset;
+        private Dictionary<VisualElement, AssetDragAndDropManipulator> _dragAndDropManipulatorLookup = new Dictionary<VisualElement, AssetDragAndDropManipulator>();
+        private bool _openAssetsOnDoubleClick = true;
 
         public AnimationExplorer(UnityEngine.Object asset) : this()
         {
@@ -68,19 +80,41 @@ namespace ZeludeEditor
 
             foreach (var category in _filterCategories)
             {
-                category.Toggle.RegisterValueChangedCallback(evt => CategoryToggleChanged(evt, category));
+                category.Toggle.RegisterValueChangedCallback(evt => HandleCategoryToggleChanged(evt, category));
             }
 
             SetFirstPossibleToggleActive();
 
             ListView = new ListView(_finalClips, ItemHeight, MakeItem, BindItem);
+            ListView.unbindItem += UnbindItem;
+            UpdateDoubleClickBinding();
             ListView.selectionType = SelectionType.Single;
             uxml.Q("content").Add(ListView);
-            uxml.Q<ToolbarSearchField>().RegisterValueChangedCallback(ToolbarSearchChanged);
+            uxml.Q<ToolbarSearchField>().RegisterValueChangedCallback(HandleToolbarSearchChanged);
             Add(uxml);
 
             UpdateCategoriesState();
             UpdateList();
+        }
+
+        private void UpdateDoubleClickBinding()
+        {
+            if (_openAssetsOnDoubleClick == true)
+            {
+                ListView.onItemsChosen -= OpenAssets;
+                ListView.onItemsChosen += OpenAssets;
+            }
+            else
+                ListView.onItemsChosen -= OpenAssets;
+        }
+
+        private void OpenAssets(IEnumerable<object> objects)
+        {
+            foreach (var obj in objects)
+            {
+                var info = (AnimationClipInfo) obj;
+                AssetDatabase.OpenAsset(info.AnimationClip.instanceID);
+            }
         }
 
         private void UpdateCategoriesState()
@@ -126,12 +160,6 @@ namespace ZeludeEditor
 
         private IEnumerable<AnimationClipInfo> GetClipsInAsset() => AnimationDatabase.GetClipsInAsset(Asset).Select(clip => new AnimationClipInfo(clip));
 
-        private void ToolbarSearchChanged(ChangeEvent<string> evt)
-        {
-            _currentSearchString = evt.newValue;
-            UpdateList();
-        }
-
         private void UpdateList()
         {
             if (string.IsNullOrWhiteSpace(_currentSearchString))
@@ -145,7 +173,13 @@ namespace ZeludeEditor
             _noAnimationsFoundElement.style.display = _finalClips.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        private void CategoryToggleChanged(ChangeEvent<bool> evt, FilterCategory category)
+        private void HandleToolbarSearchChanged(ChangeEvent<string> evt)
+        {
+            _currentSearchString = evt.newValue;
+            UpdateList();
+        }
+
+        private void HandleCategoryToggleChanged(ChangeEvent<bool> evt, FilterCategory category)
         {
             if (evt.newValue == false)
             {
@@ -155,20 +189,6 @@ namespace ZeludeEditor
 
             SetCategoryActive(category);
             UpdateList();
-        }
-
-        private void StartDrag(MouseDownEvent evt, int index)
-        {
-            DragAndDrop.objectReferences = new UnityEngine.Object[] { _finalClips[index].AnimationClip.asset };
-            DragAndDrop.StartDrag($"Drag {_finalClips[index]}");
-        }
-
-        private void BindItem(VisualElement element, int index)
-        {
-            element.UnregisterCallback<MouseDownEvent, int>(StartDrag);
-            element.RegisterCallback<MouseDownEvent, int>(StartDrag, index);
-            var info = _finalClips[index];
-            element.Q<Label>().text = info.AnimationClipName;
         }
 
         private VisualElement MakeItem()
@@ -182,6 +202,39 @@ namespace ZeludeEditor
             container.Add(new Label());
 
             return container;
+        }
+
+        private void BindItem(VisualElement element, int index)
+        {
+            element.RegisterCallback<ContextClickEvent, int>(ContextClick, index);
+            var info = _finalClips[index];
+            element.Q<Label>().text = info.AnimationClipName;
+            AddDragAndDropManipulator(element, info.AnimationClip.instanceID);
+        }
+
+        private void UnbindItem(VisualElement element, int index)
+        {
+            element.UnregisterCallback<ContextClickEvent, int>(ContextClick);
+            if (_dragAndDropManipulatorLookup.TryGetValue(element, out var manipulator))
+                element.RemoveManipulator(manipulator);
+            _dragAndDropManipulatorLookup.Remove(element);
+        }
+
+        private void AddDragAndDropManipulator(VisualElement element, int instanceID)
+        {
+            var manipulator = new AssetDragAndDropManipulator(instanceID);
+            _dragAndDropManipulatorLookup.Add(element, manipulator);
+            element.AddManipulator(manipulator);
+        }
+
+        private void ContextClick(ContextClickEvent evt, int index)
+        {
+            var info = _finalClips[index];
+            ListView.selectedIndex = index;
+            GenericMenu menu = new GenericMenu();
+            menu.AddItem(EditorGUIUtility.TrTextContent("Select in Project"), false, () => Selection.activeInstanceID = info.AnimationClip.instanceID);
+            menu.AddItem(EditorGUIUtility.TrTextContent("Ping in Project"), false, () => EditorGUIUtility.PingObject(info.AnimationClip.instanceID));
+            menu.ShowAsContext();
         }
 
         public AnimationClipInfo GetClipInfoByIndex(int index) => _finalClips[index];

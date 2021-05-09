@@ -33,7 +33,7 @@
     <engine:VisualElement name="content-container">
       <engine:VisualElement name="left-sub-window" class="sub-window">
         <engine:VisualElement name="hierarchy-panel" class="panel">
-          <engine:TextElement text="Hierarchy" class="panel__title"/>
+          <engine:TextElement text="Hierarchy" class="panel__title panel__title--thin-top"/>
         </engine:VisualElement>
         <engine:VisualElement name="blendshapes-panel" class="panel">
           <engine:TextElement text="Blendshapes" class="panel__title"/>
@@ -47,8 +47,6 @@
           <engine:Image name="uv-image" picking-mode="Ignore"/>
         </engine:VisualElement>
       </engine:IMGUIContainer>
-      <engine:VisualElement class="window-splitter"/>
-      <engine:VisualElement name="right-sub-window" class="sub-window"/>
     </engine:VisualElement>
   </engine:VisualElement>
 </engine:UXML>

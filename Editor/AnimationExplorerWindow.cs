@@ -39,20 +39,6 @@ namespace ZeludeEditor
 
             rootVisualElement.Add(header);
             rootVisualElement.Add(animationExplorer);
-
-            animationExplorer.ListView.onSelectionChange += ListView_onSelectionChange;
-        }
-
-        private void ListView_onSelectionChange(IEnumerable<object> items)
-        {
-            foreach (var item in items)
-            {
-                if (item is AnimationClipInfo info)
-                {
-                    EditorUtility.FocusProjectWindow();
-                    EditorGUIUtility.PingObject(info.AnimationClip.instanceID);
-                }
-            }
         }
     }
 }
