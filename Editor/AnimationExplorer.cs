@@ -26,8 +26,8 @@ namespace ZeludeEditor
 
         public ListView ListView { get; private set; }
 
-        private List<AnimationClip> _finalClips;
-        private IEnumerable<AnimationClip> _prefilteredList;
+        private List<AnimationClipInfo> _finalClips;
+        private IEnumerable<AnimationClipInfo> _prefilteredList;
         private Texture _animationIcon;
         private TextElement _searchCountLabel;
         private VisualElement _noAnimationsFoundElement;
@@ -135,14 +135,14 @@ namespace ZeludeEditor
             image.scaleMode = ScaleMode.ScaleToFit;
         }
 
-        private IEnumerable<AnimationClip> GetClipsOnAsset()
+        private IEnumerable<AnimationClipInfo> GetClipsOnAsset()
         {
             if (Asset is AnimationClip clip)
-                yield return clip;
+                yield return new AnimationClipInfo(clip);
             var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(Asset));
             foreach (var subAsset in subAssets)
                 if (subAsset is AnimationClip subClip)
-                    yield return subClip;
+                    yield return new AnimationClipInfo(subClip);
         }
 
         private void ToolbarSearchChanged(ChangeEvent<string> evt)
@@ -156,7 +156,7 @@ namespace ZeludeEditor
             if (string.IsNullOrWhiteSpace(_currentSearchString))
                 _finalClips = _prefilteredList.ToList();
             else
-                _finalClips = _prefilteredList.Where(x => x.name.IndexOf(_currentSearchString, StringComparison.InvariantCultureIgnoreCase) != -1).ToList();
+                _finalClips = _prefilteredList.Where(x => x.AnimationClipName.IndexOf(_currentSearchString, StringComparison.InvariantCultureIgnoreCase) != -1).ToList();
             ListView.itemsSource = _finalClips;
             _searchCountLabel.text = $"{_finalClips.Count}/{_prefilteredList.Count()}";
 
@@ -178,7 +178,7 @@ namespace ZeludeEditor
 
         private void StartDrag(MouseDownEvent evt, int index)
         {
-            DragAndDrop.objectReferences = new UnityEngine.Object[] { _finalClips[index] };
+            DragAndDrop.objectReferences = new UnityEngine.Object[] { _finalClips[index].AnimationClip.asset };
             DragAndDrop.StartDrag($"Drag {_finalClips[index]}");
         }
 
@@ -186,7 +186,7 @@ namespace ZeludeEditor
         {
             element.UnregisterCallback<MouseDownEvent, int>(StartDrag);
             element.RegisterCallback<MouseDownEvent, int>(StartDrag, index);
-            element.Q<Label>().text = _finalClips[index].name;
+            element.Q<Label>().text = _finalClips[index].AnimationClipName;
         }
 
         private VisualElement MakeItem()
@@ -206,9 +206,9 @@ namespace ZeludeEditor
         {
             public Toggle Toggle;
             public Func<bool> ValidationFunc;
-            public Func<IEnumerable<AnimationClip>> GetClipsFunc;
+            public Func<IEnumerable<AnimationClipInfo>> GetClipsFunc;
 
-            public FilterCategory(Toggle toggle, Func<bool> validationFunc, Func<IEnumerable<AnimationClip>> getClipsFunc)
+            public FilterCategory(Toggle toggle, Func<bool> validationFunc, Func<IEnumerable<AnimationClipInfo>> getClipsFunc)
             {
                 Toggle = toggle;
                 ValidationFunc = validationFunc;

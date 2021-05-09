@@ -8,9 +8,9 @@ namespace ZeludeEditor
 {
     public static class AnimationDatabase
     {
-        private static Dictionary<Avatar, List<AnimationClip>> _avatarLookup = new Dictionary<Avatar, List<AnimationClip>>();
-        private static List<AnimationClip> _clipsWithNoAvatar = new List<AnimationClip>();
-        private static List<AnimationClip> _legacyClips = new List<AnimationClip>();
+        private static Dictionary<Avatar, List<AnimationClipInfo>> _avatarLookup = new Dictionary<Avatar, List<AnimationClipInfo>>();
+        private static List<AnimationClipInfo> _clipsWithNoAvatar = new List<AnimationClipInfo>();
+        private static List<AnimationClipInfo> _legacyClips = new List<AnimationClipInfo>();
 
         static AnimationDatabase()
         {
@@ -60,31 +60,31 @@ namespace ZeludeEditor
             }
         }
 
-        private static void AddAvatarClip(AnimationClip info, Avatar avatar)
+        private static void AddAvatarClip(AnimationClip clip, Avatar avatar)
         {
             if (avatar != null)
             {
                 if (!_avatarLookup.ContainsKey(avatar))
-                    _avatarLookup.Add(avatar, new List<AnimationClip>());
+                    _avatarLookup.Add(avatar, new List<AnimationClipInfo>());
 
-                _avatarLookup[avatar].Add(info);
+                _avatarLookup[avatar].Add(new AnimationClipInfo(clip, avatar));
             }
             else
             {
-                _clipsWithNoAvatar.Add(info);
+                _clipsWithNoAvatar.Add(new AnimationClipInfo(clip));
             }
         }
 
-        private static void AddLegacyClip(AnimationClip info)
+        private static void AddLegacyClip(AnimationClip clip)
         {
-            _legacyClips.Add(info);
+            _legacyClips.Add(new AnimationClipInfo(clip));
         }
 
-        public static IEnumerable<AnimationClip> GetLegacyClips() => _legacyClips;
+        public static IEnumerable<AnimationClipInfo> GetLegacyClips() => _legacyClips;
 
-        public static IEnumerable<AnimationClip> GetClipsWithoutAvatar() => _clipsWithNoAvatar;
+        public static IEnumerable<AnimationClipInfo> GetClipsWithoutAvatar() => _clipsWithNoAvatar;
 
-        public static IEnumerable<AnimationClip> GetHumanClips()
+        public static IEnumerable<AnimationClipInfo> GetHumanClips()
         {
             foreach (var kvp in _avatarLookup)
             {
@@ -94,14 +94,14 @@ namespace ZeludeEditor
             }
         }
 
-        public static IEnumerable<AnimationClip> GetClipsForAvatar(Avatar avatar)
+        public static IEnumerable<AnimationClipInfo> GetClipsForAvatar(Avatar avatar)
         {
             if (_avatarLookup.TryGetValue(avatar, out var list))
                 return list;
             return null;
         }
 
-        public static IEnumerable<AnimationClip> GetAllClips()
+        public static IEnumerable<AnimationClipInfo> GetAllClips()
         {
             foreach (var kvp in _avatarLookup)
                 foreach (var clip in kvp.Value)
@@ -112,6 +112,30 @@ namespace ZeludeEditor
 
             foreach (var clip in _legacyClips)
                 yield return clip;
+        }
+    }
+
+    public readonly struct AnimationClipInfo
+    {
+        public readonly string AvatarName;
+        public readonly string AnimationClipName;
+        public readonly LazyLoadReference<Avatar> Avatar;
+        public readonly LazyLoadReference<AnimationClip> AnimationClip;
+
+        public AnimationClipInfo(AnimationClip animationClip)
+        {
+            AvatarName = "";
+            Avatar = new LazyLoadReference<Avatar>();
+            AnimationClipName = animationClip.name;
+            AnimationClip = new LazyLoadReference<AnimationClip>(animationClip);
+        }
+
+        public AnimationClipInfo(AnimationClip animationClip, Avatar avatar)
+        {
+            AvatarName = avatar.name;
+            AnimationClipName = animationClip.name;
+            Avatar = new LazyLoadReference<Avatar>(avatar);
+            AnimationClip = new LazyLoadReference<AnimationClip>(animationClip);
         }
     }
 }
