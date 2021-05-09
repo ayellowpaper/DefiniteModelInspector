@@ -113,6 +113,42 @@ namespace ZeludeEditor
             foreach (var clip in _legacyClips)
                 yield return clip;
         }
+
+        /// <summary>
+        /// Will check if the asset is the avatar and return that. Otherwise will look for an embedded avatar in the file and return that.
+        /// At last it will check if the asset is a model and references an avatar in another asset and return that.
+        /// If all fails returns null.
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <returns></returns>
+        public static Avatar GetAvatarFromAsset(Object asset)
+        {
+            if (asset == null || !EditorUtility.IsPersistent(asset)) return null;
+            if (asset is Avatar avatar) return avatar;
+
+            var path = AssetDatabase.GetAssetPath(asset);
+            var embeddedAvatar = AssetDatabase.LoadAssetAtPath<Avatar>(path);
+            if (embeddedAvatar != null) return embeddedAvatar;
+
+            var importer = AssetImporter.GetAtPath(path);
+            if (importer is ModelImporter modelImporter
+                && (modelImporter.animationType == ModelImporterAnimationType.Generic || modelImporter.animationType == ModelImporterAnimationType.Human)
+                && modelImporter.avatarSetup == ModelImporterAvatarSetup.CopyFromOther
+                && modelImporter.sourceAvatar != null)
+                return modelImporter.sourceAvatar;
+            return null;
+        }
+
+        public static IEnumerable<AnimationClip> GetClipsInAsset(Object asset)
+        {
+            if (asset == null || !EditorUtility.IsPersistent(asset)) yield break;
+            if (asset is AnimationClip clip)
+                yield return clip;
+            var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(asset));
+            foreach (var subAsset in subAssets)
+                if (subAsset is AnimationClip subClip)
+                    yield return subClip;
+        }
     }
 
     public readonly struct AnimationClipInfo

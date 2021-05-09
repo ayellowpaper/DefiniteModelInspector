@@ -54,9 +54,9 @@ namespace ZeludeEditor
             _searchCountLabel = uxml.Q<TextElement>("search-count");
             _noAnimationsFoundElement = uxml.Q("no-animations-found");
             _noAnimationsFoundElement.style.display = DisplayStyle.None;
-            var humanFilter = new FilterCategory(uxml.Q<Toggle>("toggle-human"), () => Asset == null ^ (GetAvatarFromAsset() is Avatar avatar && avatar.isHuman), AnimationDatabase.GetHumanClips);
-            var avatarFilter = new FilterCategory(uxml.Q<Toggle>("toggle-avatar"), () => GetAvatarFromAsset() != null, () => AnimationDatabase.GetClipsForAvatar(GetAvatarFromAsset()));
-            var assetFilter = new FilterCategory(uxml.Q<Toggle>("toggle-asset"), () => Asset != null && GetClipsOnAsset().Count() > 0, GetClipsOnAsset);
+            var humanFilter = new FilterCategory(uxml.Q<Toggle>("toggle-human"), () => Asset == null ^ (AnimationDatabase.GetAvatarFromAsset(Asset) is Avatar avatar && avatar.isHuman), AnimationDatabase.GetHumanClips);
+            var avatarFilter = new FilterCategory(uxml.Q<Toggle>("toggle-avatar"), () => AnimationDatabase.GetAvatarFromAsset(Asset) != null, () => AnimationDatabase.GetClipsForAvatar(AnimationDatabase.GetAvatarFromAsset(Asset)));
+            var assetFilter = new FilterCategory(uxml.Q<Toggle>("toggle-asset"), () => Asset != null && GetClipsInAsset().Count() > 0, GetClipsInAsset);
             var allFilter = new FilterCategory(uxml.Q<Toggle>("toggle-all"), () => true, AnimationDatabase.GetAllClips);
 
             SetCategoryImage(humanFilter.Toggle, "HumanTemplate Icon");
@@ -106,20 +106,6 @@ namespace ZeludeEditor
             }
         }
 
-        private Avatar GetAvatarFromAsset()
-        {
-            if (Asset == null) return null;
-            if (Asset is Avatar avatar) return avatar;
-
-            var path = AssetDatabase.GetAssetPath(Asset);
-            var embeddedAvatar = AssetDatabase.LoadAssetAtPath<Avatar>(path);
-            if (embeddedAvatar != null) return embeddedAvatar;
-
-            var importer = AssetImporter.GetAtPath(path);
-            if (importer is ModelImporter modelImporter && modelImporter.sourceAvatar != null) return modelImporter.sourceAvatar;
-            return null;
-        }
-
         private void SetCategoryActive(FilterCategory category)
         {
             if (_activeToggle != null) _activeToggle.SetValueWithoutNotify(false);
@@ -135,15 +121,7 @@ namespace ZeludeEditor
             image.scaleMode = ScaleMode.ScaleToFit;
         }
 
-        private IEnumerable<AnimationClipInfo> GetClipsOnAsset()
-        {
-            if (Asset is AnimationClip clip)
-                yield return new AnimationClipInfo(clip);
-            var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(Asset));
-            foreach (var subAsset in subAssets)
-                if (subAsset is AnimationClip subClip)
-                    yield return new AnimationClipInfo(subClip);
-        }
+        private IEnumerable<AnimationClipInfo> GetClipsInAsset() => AnimationDatabase.GetClipsInAsset(Asset).Select(clip => new AnimationClipInfo(clip));
 
         private void ToolbarSearchChanged(ChangeEvent<string> evt)
         {
