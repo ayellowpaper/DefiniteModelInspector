@@ -3,14 +3,6 @@
 	flex-grow: 1;
 }
 
-#viewport {
-	flex-grow: 1;
-}
-
-#hierarchy {
-	width: 400px;
-}
-
 #viewport-stats {
 	position: absolute;
 	left: 10px;
@@ -92,11 +84,26 @@ Toolbar {
 	border-top-width: 0px;
 }
 
-#left-sub-window {
-	width: 280px;
+.panel__content {
+	flex-grow: 1;
 }
 
-#blendshapes-panel {
-	flex-grow: 0;
-	flex-basis: 280px;
+#blendshapes-panel__content {
+	margin: 1px 4px 0px 0px;
+}
+
+#unity-dragline-anchor {
+	background-color: #282828;
+}
+
+#unity-dragline-anchor:hover {
+	background-color: #BABABA;
+}
+
+#left-sub-window, #viewport {
+	min-width: 180px;
+}
+
+#blendshapes-panel, #hierarchy-panel {
+	min-height: 140px;
 }

@@ -5,8 +5,8 @@ using UnityEditor;
 using UnityEngine.UIElements;
 using System;
 using System.Linq;
-
 using UnityEditor.UIElements;
+
 namespace ZeludeEditor
 {
     public class AnimationExplorerWindow : EditorWindow

@@ -177,7 +177,7 @@ namespace ZeludeEditor
             _viewport.contextType = ContextType.Editor;
             _viewport.onGUIHandler = OnViewportGUI;
 
-            var hierarchyPanel = uxml.Q("hierarchy-panel");
+            var hierarchyPanel = uxml.Q("hierarchy-panel__content");
             var hierarchyGui = new IMGUIContainer();
             hierarchyPanel.Add(hierarchyGui);
             hierarchyGui.cullingEnabled = false;
@@ -185,7 +185,7 @@ namespace ZeludeEditor
             hierarchyGui.onGUIHandler = OnHierarchyGUI;
             hierarchyGui.style.flexGrow = 1;
 
-            var blendShapesPanel = uxml.Q("blendshapes-panel");
+            var blendShapesPanel = uxml.Q("blendshapes-panel__content");
             var blendShapesGui = new IMGUIContainer();
             blendShapesPanel.Add(blendShapesGui);
             blendShapesGui.cullingEnabled = false;
@@ -402,19 +402,34 @@ namespace ZeludeEditor
 
         private void DrawGrid()
         {
-            const int lineCount = 100;
+            const int fadingLineCount = 5;
+            const int lineCount = 20;
             const float lineSpace = 1f;
             const float offset = (lineCount / 2f) * lineSpace;
 
+            static float GetAlpha(int index)
+            {
+                if (index <= fadingLineCount)
+                    return (float)index / fadingLineCount;
+                else if (index >= lineCount - fadingLineCount)
+                    return (float)(lineCount - index) / fadingLineCount;
+                return 1f;
+            }
+
+            var color = new Color(126 / 255f, 126 / 255f, 125 / 255f);
             GL.Begin(GL.LINES);
-            GL.Color(new Color(126/255f, 126/255f, 125/255f));
+            GL.Color(color);
             for (int x = 0; x < lineCount; x++)
             {
+                color.a = GetAlpha(x);
+                GL.Color(color);
                 GL.Vertex(new Vector3(x * lineSpace - offset, 0, -offset));
                 GL.Vertex(new Vector3(x * lineSpace - offset, 0, offset));
             }
             for (int y = 0; y < lineCount; y++)
             {
+                color.a = GetAlpha(y);
+                GL.Color(color);
                 GL.Vertex(new Vector3(-offset, 0, y * lineSpace - offset));
                 GL.Vertex(new Vector3(offset, 0, y * lineSpace - offset));
             }

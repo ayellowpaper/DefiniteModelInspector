@@ -30,16 +30,17 @@
       <editor:ToolbarSpacer style="flex-grow: 1"></editor:ToolbarSpacer>
     </editor:Toolbar>
     <editor:ToolbarButton name="asset-button"/>
-    <engine:VisualElement name="content-container">
-      <engine:VisualElement name="left-sub-window" class="sub-window">
+    <engine:TwoPaneSplitView name="content-container" fixed-pane-index="0" fixed-pane-initial-dimension="300">
+      <engine:TwoPaneSplitView name="left-sub-window" class="sub-window" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="300">
         <engine:VisualElement name="hierarchy-panel" class="panel">
           <engine:TextElement text="Hierarchy" class="panel__title panel__title--thin-top"/>
+          <engine:VisualElement name="hierarchy-panel__content" class="panel__content"/>
         </engine:VisualElement>
         <engine:VisualElement name="blendshapes-panel" class="panel">
           <engine:TextElement text="Blendshapes" class="panel__title"/>
+          <engine:VisualElement name="blendshapes-panel__content" class="panel__content"/>
         </engine:VisualElement>
-      </engine:VisualElement>
-      <engine:VisualElement class="window-splitter"/>
+      </engine:TwoPaneSplitView>
       <engine:IMGUIContainer name="viewport">
         <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
         </engine:VisualElement>
@@ -47,6 +48,6 @@
           <engine:Image name="uv-image" picking-mode="Ignore"/>
         </engine:VisualElement>
       </engine:IMGUIContainer>
-    </engine:VisualElement>
+    </engine:TwoPaneSplitView>
   </engine:VisualElement>
 </engine:UXML>
