@@ -69,16 +69,7 @@ namespace ZeludeEditor
         protected override void SelectionChanged(IList<int> selectedIds)
         {
             base.SelectionChanged(selectedIds);
-            Selection.instanceIDs = selectedIds.ToArray();
             OnSelectionChanged?.Invoke(this, System.EventArgs.Empty);
-        }
-
-        protected override void RowGUI(RowGUIArgs args)
-        {
-            //PR PrefabLabel
-
-            //EditorGUI.LabelField(args.rowRect, args.label);
-            base.RowGUI(args);
         }
     }
 }

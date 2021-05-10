@@ -418,34 +418,20 @@ namespace ZeludeEditor
 
         private void DrawGrid()
         {
-            const int fadingLineCount = 5;
             const int lineCount = 20;
             const float lineSpace = 1f;
             const float offset = (lineCount / 2f) * lineSpace;
 
-            static float GetAlpha(int index)
-            {
-                if (index <= fadingLineCount)
-                    return (float)index / fadingLineCount;
-                else if (index >= lineCount - fadingLineCount)
-                    return (float)(lineCount - index) / fadingLineCount;
-                return 1f;
-            }
-
-            var color = new Color(126 / 255f, 126 / 255f, 125 / 255f);
+            var color = new Color(128 / 255f, 128 / 255f, 128 / 255f, 102/ 255f);
             GL.Begin(GL.LINES);
             GL.Color(color);
             for (int x = 0; x < lineCount; x++)
             {
-                color.a = GetAlpha(x);
-                GL.Color(color);
                 GL.Vertex(new Vector3(x * lineSpace - offset, 0, -offset));
                 GL.Vertex(new Vector3(x * lineSpace - offset, 0, offset));
             }
             for (int y = 0; y < lineCount; y++)
             {
-                color.a = GetAlpha(y);
-                GL.Color(color);
                 GL.Vertex(new Vector3(-offset, 0, y * lineSpace - offset));
                 GL.Vertex(new Vector3(offset, 0, y * lineSpace - offset));
             }
