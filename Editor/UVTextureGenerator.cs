@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEditor;
 
 namespace ZeludeEditor
 {
@@ -18,9 +19,8 @@ namespace ZeludeEditor
 
         public UVTextureGenerator()
         {
-            var shader = Shader.Find("Zelude/Handles Lines");
+            var shader = Shader.Find("Hidden/Internal-Colored");
             _renderMaterial = new Material(shader);
-            _renderMaterial.SetInt("_HandleZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
             _renderMaterial.hideFlags = HideFlags.HideAndDontSave;
         }
 

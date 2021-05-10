@@ -143,9 +143,9 @@ namespace ZeludeEditor
 
             _ground.SetActive(_meshPreviewSettings.ShowGround);
 
-            var shader = Shader.Find("Zelude/Handles Lines");
+            var shader = Shader.Find("Hidden/Internal-Colored");
             _handleMat = new Material(shader);
-            _handleMat.SetInt("_HandleZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
+            //_handleMat.SetInt("_HandleZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
             _handleMat.hideFlags = HideFlags.HideAndDontSave;
 
             _vertexDrawer = new VertexDrawer(_meshGroup);
