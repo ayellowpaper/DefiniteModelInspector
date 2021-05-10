@@ -205,13 +205,16 @@ namespace ZeludeEditor
             uxml.Q("viewport-stats").Add(CreateStatsRow("Vertices", "vertex-count"));
             uxml.Q("viewport-stats").Add(CreateStatsRow("Tris", "tri-count"));
 
-            var assetButton = uxml.Q<Button>("asset-button");
-            assetButton.text = _sourceGO.name;
+            var assetButton = uxml.Q<Button>("ping-asset");
+            assetButton.text = $"Model: {_sourceGO.name}";
             assetButton.clicked += () =>
             {
                 EditorUtility.FocusProjectWindow();
                 EditorGUIUtility.PingObject(_sourceGO);
             };
+
+            var selectAssetButton = uxml.Q<Button>("select-asset");
+            selectAssetButton.clicked += () => { Selection.activeObject = _sourceGO; };
 
             UpdateStatsLabel();
             ToggleUVWindow(false);

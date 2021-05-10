@@ -29,7 +29,6 @@
       </engine:Instance>
       <editor:ToolbarSpacer style="flex-grow: 1"></editor:ToolbarSpacer>
     </editor:Toolbar>
-    <editor:ToolbarButton name="asset-button"/>
     <engine:TwoPaneSplitView name="content-container" fixed-pane-index="0" fixed-pane-initial-dimension="300">
       <engine:TwoPaneSplitView name="details-pane" class="pane" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="200">
         <engine:VisualElement name="hierarchy-pane" class="pane">
@@ -41,13 +40,19 @@
           <engine:VisualElement name="blendshapes-pane__content" class="pane__content"/>
         </engine:VisualElement>
       </engine:TwoPaneSplitView>
-      <engine:IMGUIContainer name="viewport">
-        <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
-        </engine:VisualElement>
-        <engine:VisualElement name="uv-window" picking-mode="Ignore">
-          <engine:Image name="uv-image" picking-mode="Ignore"/>
-        </engine:VisualElement>
-      </engine:IMGUIContainer>
+      <engine:VisualElement name="viewport-pane">
+        <editor:Toolbar name="viewport-toolbar">
+          <editor:ToolbarButton text="Ping" name="ping-asset"/>
+          <editor:ToolbarButton text="Select Asset" name="select-asset"/>
+        </editor:Toolbar>
+        <engine:IMGUIContainer name="viewport">
+          <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
+          </engine:VisualElement>
+          <engine:VisualElement name="uv-window" picking-mode="Ignore">
+            <engine:Image name="uv-image" picking-mode="Ignore"/>
+          </engine:VisualElement>
+        </engine:IMGUIContainer>
+      </engine:VisualElement>
     </engine:TwoPaneSplitView>
   </engine:VisualElement>
 </engine:UXML>

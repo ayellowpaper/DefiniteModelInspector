@@ -3,6 +3,10 @@
 	flex-grow: 1;
 }
 
+#viewport {
+	flex-grow: 1;
+}
+
 #viewport-stats {
 	position: absolute;
 	left: 10px;
@@ -54,12 +58,23 @@ Toolbar {
 	margin: 0px;
 }
 
-#asset-button {
-	border-width: 0px 0px 1px 0px;
-	margin: 0px;
+#ping-asset {
 	-unity-text-align: middle-center;
 	-unity-font-style: bold;
-	padding: 3px;
+	flex-grow: 1;
+	font-size: 14px;
+}
+
+#viewport-toolbar {
+	height: 25px;
+}
+
+#select-asset {
+	-unity-text-align: middle-right;
+	-unity-font-style: bold;
+	width: 120px;
+	border-width: 0px;
+	padding-right: 8px;
 }
 
 #content-container {
