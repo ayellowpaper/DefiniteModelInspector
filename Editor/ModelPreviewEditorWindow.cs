@@ -127,7 +127,7 @@ namespace ZeludeEditor
             titleContent = new GUIContent(_sourceGO.name, AssetPreview.GetAssetPreview(_sourceGO));
             _previewScene = new PreviewScene();
             ReloadMesh();
-            _previewScene.OnDoHandles += DrawHandles;
+            _previewScene.OnDoHandles += DoHandles;
 
             var bounds = CalculateBounds(_previewGO);
 
@@ -354,7 +354,7 @@ namespace ZeludeEditor
             return bounds;
         }
 
-        private void DrawHandles()
+        private void DoHandles()
         {
             /// TODO: For some reason checking handle interaction has an offset in the y axis
             Vector2 offset = _viewport.LocalToWorld(Vector2.zero);
@@ -369,6 +369,7 @@ namespace ZeludeEditor
             if (_meshPreviewSettings.ShowBinormals) _binormalDrawer.Draw(_previewScene.Camera);
 
             DoToolHandles();
+            HandleViewportSelection();
 
             Event.current.mousePosition -= offset;
         }
@@ -376,12 +377,14 @@ namespace ZeludeEditor
         private void DoToolHandles()
         {
             var selection = _hierarchy.GetSelectedObjects();
+            var count = selection.Count();
+            if (count <= 0) return;
             Vector3 position = Vector3.zero;
             foreach (var go in selection)
             {
                 position += go.transform.position;
             }
-            position /= selection.Count();
+            position /= count;
 
             var rotation = Quaternion.identity;
 
@@ -389,11 +392,20 @@ namespace ZeludeEditor
             tool.DoTool(position, rotation, selection);
         }
 
-        private void HandleDeselect()
+        private void HandleViewportSelection()
         {
-            if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && Event.current.modifiers == EventModifiers.None)
             {
-                _hierarchy.SetSelection(new List<int>());
+                var go = HandleUtility.PickGameObject(Event.current.mousePosition, false);
+                if (go == null)
+                    _hierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
+                else
+                {
+                    if (_hierarchy.AvailableIDs.Contains(go.GetInstanceID()))
+                        _hierarchy.SetSelection(new List<int>() { go.GetInstanceID() }, TreeViewSelectionOptions.FireSelectionChanged | TreeViewSelectionOptions.RevealAndFrame);
+                    else
+                        _hierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
+                }
             }
         }
 

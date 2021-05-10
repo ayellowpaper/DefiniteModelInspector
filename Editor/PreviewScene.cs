@@ -80,6 +80,9 @@ namespace ZeludeEditor
                 UpdateRenderTexture((int)rect.width, (int)rect.height);
                 Camera.targetTexture = RenderTexture;
                 Camera.pixelRect = new Rect(0f, 0f, rect.width, rect.height);
+
+                var func = typeof(Handles).GetMethod("SetSceneViewColors", BindingFlags.NonPublic | BindingFlags.Static);
+                func.Invoke(null, new object[] { Color.red, Color.red, Color.red, Color.red, Color.red });
                 Camera.Render();
             }
 

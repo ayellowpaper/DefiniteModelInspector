@@ -13,6 +13,8 @@ namespace ZeludeEditor
 
         public event System.EventHandler OnSelectionChanged;
 
+        public HashSet<int> AvailableIDs = new HashSet<int>();
+
         public MeshGroupHierarchy(MeshGroup meshGroup, TreeViewState state) : base(state)
         {
             MeshGroup = meshGroup;
@@ -22,6 +24,7 @@ namespace ZeludeEditor
 
         protected override TreeViewItem BuildRoot()
         {
+            AvailableIDs.Clear();
             var root = new TreeViewItem(0, -1, "Root");
 
             AddChild(MeshGroup.Root, root);
@@ -35,14 +38,15 @@ namespace ZeludeEditor
             base.OnGUI(rect);
             if (GUI.Button(rect, "", GUIStyle.none))
             {
-                this.SetSelection(new List<int>());
+                this.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
             }
         }
 
         private void AddChild(MeshGroupNode node, TreeViewItem parent)
         {
-            var item = new TreeViewItem(node.GameObject.GetInstanceID(), -1, node.GameObject.name);
-            //item.icon = EditorGUIUtility.LoadRequired("d_MeshRenderer Icon") as Texture2D;
+            var id = node.GameObject.GetInstanceID();
+            AvailableIDs.Add(id);
+            var item = new TreeViewItem(id, -1, node.GameObject.name);
             if (node.MeshInfo != null)
                 item.icon = EditorGUIUtility.ObjectContent(node.MeshInfo.Renderer, typeof(Renderer)).image as Texture2D;
             else
@@ -65,6 +69,7 @@ namespace ZeludeEditor
         protected override void SelectionChanged(IList<int> selectedIds)
         {
             base.SelectionChanged(selectedIds);
+            Selection.instanceIDs = selectedIds.ToArray();
             OnSelectionChanged?.Invoke(this, System.EventArgs.Empty);
         }
 
