@@ -34,8 +34,6 @@ namespace ZeludeEditor
             var prevTexture = RenderTexture.active;
             RenderTexture.active = _renderTexture;
 
-            Vector2 multiplier = new Vector2(width, height);
-
             GL.Clear(true, true, new Color(1, 1, 1, 0));
 
             GL.PushMatrix();

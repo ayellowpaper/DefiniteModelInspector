@@ -257,10 +257,14 @@ namespace ZeludeEditor
 
             _hierarchy = new MeshGroupHierarchy(_meshGroup, new TreeViewState());
 
-            bool hasBlendShapes = BlendShapesList.CreateFromRenderers(_previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true), new TreeViewState(), out _blendShapes);
+            var renderers = _previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            bool hasBlendShapes = renderers.Any(renderer => renderer.sharedMesh.blendShapeCount > 0);
             var detailsPane = rootVisualElement.Q<TwoPaneSplitView>("details-pane");
             if (hasBlendShapes)
+            {
+                _blendShapes = new BlendShapesList(renderers, new TreeViewState(), true);
                 detailsPane.UnCollapse();
+            }
             else
                 detailsPane.CollapseChild(1);
 
