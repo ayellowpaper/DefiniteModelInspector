@@ -73,7 +73,7 @@ namespace ZeludeEditor
                     if (_blendShapeItemsByName.TryGetValue(name, out var item))
                         item.BlendShapes.Add(blendShape);
                     else
-                        _blendShapeItemsByName.Add(name, new BlendShapeItem(++id, 1, mesh.GetBlendShapeName(i), blendShape));
+                        _blendShapeItemsByName.Add(name, new BlendShapeItem(++id, 1, $"{i}    {name}", blendShape));
                 }
             }
 
@@ -108,14 +108,14 @@ namespace ZeludeEditor
             {
                 var rect = args.rowRect;
                 rect.xMin += GetContentIndent(blendShapeItem);
-                EditorGUIUtility.labelWidth = 80;
+                EditorGUIUtility.labelWidth = 100;
                 EditorGUI.BeginChangeCheck();
-                var newValue = EditorGUI.Slider(rect, blendShapeItem.displayName, blendShapeItem.LerpValue, 0f, 1f);
+                var newValue = EditorGUI.Slider(rect, blendShapeItem.displayName, blendShapeItem.NormalizedWeight, 0f, 1f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     foreach (var blendShape in blendShapeItem.BlendShapes)
                         Undo.RecordObject(blendShape.Renderer, "Blendshape");
-                    blendShapeItem.Lerp(newValue);
+                    blendShapeItem.NormalizedWeight = newValue;
                 }
             }
             else
@@ -127,17 +127,13 @@ namespace ZeludeEditor
         private class BlendShapeItem : TreeViewItem
         {
             public List<BlendShape> BlendShapes { get; private set; }
-            public float LerpValue { get; private set; }
+            public float NormalizedWeight {
+                get => BlendShapes.Sum(x => x.NormaizedWeight) / BlendShapes.Count;
+                set => BlendShapes.ForEach(x => x.NormaizedWeight = value);
+            }
 
             public BlendShapeItem(int id, int depth, string displayName, BlendShape blendShape) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>() { blendShape };
             public BlendShapeItem(int id, int depth, string displayName, IEnumerable<BlendShape> blendShapes) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>(blendShapes);
-
-            public void Lerp(float t)
-            {
-                LerpValue = Mathf.Clamp01(t);
-                foreach (var info in BlendShapes)
-                    info.Lerp(LerpValue);
-            }
         }
 
         private class BlendShape
@@ -146,6 +142,11 @@ namespace ZeludeEditor
             public readonly int BlendShapeIndex;
             public readonly float MinValue;
             public readonly float MaxValue;
+
+            public float NormaizedWeight {
+                get => Mathf.InverseLerp(MinValue, MaxValue, Renderer.GetBlendShapeWeight(BlendShapeIndex));
+                set => Renderer.SetBlendShapeWeight(BlendShapeIndex, Mathf.Lerp(MinValue, MaxValue, Mathf.Clamp01(value)));
+            }
 
             public BlendShape(SkinnedMeshRenderer renderer, int blendShapeIndex)
             {
@@ -163,8 +164,6 @@ namespace ZeludeEditor
                     MaxValue = Mathf.Max(MaxValue, weight);
                 }
             }
-
-            public void Lerp(float t) => Renderer.SetBlendShapeWeight(BlendShapeIndex, Mathf.Lerp(MinValue, MaxValue, t));
         }
     }
 }
