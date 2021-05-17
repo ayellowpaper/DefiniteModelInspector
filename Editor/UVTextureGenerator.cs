@@ -36,9 +36,11 @@ namespace ZeludeEditor
 
             GL.Clear(true, true, new Color(1, 1, 1, 0));
 
+            const float margin = 0.001f;
+
             GL.PushMatrix();
             GL.modelview = Matrix4x4.TRS(new Vector3(0, 0, -1), Quaternion.Euler(0, 0, 0), Vector3.one);
-            GL.LoadProjectionMatrix(Matrix4x4.Ortho(0, 1, 0, 1, 0.01f, 10f));
+            GL.LoadProjectionMatrix(Matrix4x4.Ortho(-margin, 1 + margin, -margin, 1 + margin, 0.01f, 10f));
 
             _renderMaterial.SetPass(0);
             GL.Begin(GL.LINES);
