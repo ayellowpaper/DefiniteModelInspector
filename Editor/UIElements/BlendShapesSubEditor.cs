@@ -9,7 +9,7 @@ namespace ZeludeEditor
 	public class BlendShapesSubEditor : VisualElement
 	{
 		public BlendShapesList List { get; private set; }
-		private Toggle _combinedToggle;
+		private Toggle _collapsedToggle;
 		private Toggle _showIndexToggle;
 		private Toggle _sortingToggle;
 		private ToolbarSearchField _searchField;
@@ -17,21 +17,28 @@ namespace ZeludeEditor
 		public BlendShapesSubEditor()
 		{
 			var toolbar = new Toolbar();
-			_combinedToggle = new ToolbarToggle();
-			_combinedToggle.text = "C";
-			_combinedToggle.RegisterValueChangedCallback(HandleCombinedToggleValueChanged);
+			_collapsedToggle = new ToolbarToggle();
+			_collapsedToggle.text = "C";
+			_collapsedToggle.tooltip = "Collapse BlendShapes with the same name into one.";
+			_collapsedToggle.RegisterValueChangedCallback(HandleCollapsedToggleValueChanged);
+
 			_showIndexToggle = new ToolbarToggle();
 			_showIndexToggle.text = "[i]";
+			_showIndexToggle.tooltip = "Show the index of the BlendShape.";
 			_showIndexToggle.RegisterValueChangedCallback(HandleShowIndexToggleValueChanged);
+
 			_sortingToggle = new ToolbarToggle();
 			var image = new Image();
 			image.image = EditorGUIUtility.Load("d_AlphabeticalSorting") as Texture;
 			_sortingToggle.Add(image);
+			_sortingToggle.tooltip = "Sort alphabetically.";
 			_sortingToggle.RegisterValueChangedCallback(HandleSortingToggleValueChanged);
+
 			_searchField = new ToolbarSearchField();
 			_searchField.AddToClassList("toolbar-filler");
 			_searchField.RegisterValueChangedCallback(HandleSearchFieldValueChanged);
-			toolbar.Add(_combinedToggle);
+
+			toolbar.Add(_collapsedToggle);
 			toolbar.Add(_showIndexToggle);
 			toolbar.Add(_sortingToggle);
 			toolbar.Add(_searchField);
@@ -64,16 +71,16 @@ namespace ZeludeEditor
 				List.searchString = evt.newValue;
 		}
 
-		private void HandleCombinedToggleValueChanged(ChangeEvent<bool> evt)
+		private void HandleCollapsedToggleValueChanged(ChangeEvent<bool> evt)
 		{
 			if (List != null)
-				List.ShowCombined = evt.newValue;
+				List.ShowCollapsed = evt.newValue;
 		}
 
 		public void SetList(BlendShapesList list)
 		{
 			List = list;
-			_combinedToggle.SetValueWithoutNotify(list.ShowCombined);
+			_collapsedToggle.SetValueWithoutNotify(list.ShowCollapsed);
 			_showIndexToggle.SetValueWithoutNotify(list.ShowIndex);
 			_sortingToggle.SetValueWithoutNotify(list.SortAlphabetically);
 			_searchField.SetValueWithoutNotify(list.searchString);

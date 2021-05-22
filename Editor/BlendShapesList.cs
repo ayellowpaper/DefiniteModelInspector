@@ -12,13 +12,13 @@ namespace ZeludeEditor
 {
 	public class BlendShapesList : TreeView
 	{
-		public bool ShowCombined
+		public bool ShowCollapsed
 		{
-			get => _showCombined;
+			get => _showCollapsed;
 			set
 			{
-				if (_showCombined == value) return;
-				_showCombined = value;
+				if (_showCollapsed == value) return;
+				_showCollapsed = value;
 				UpdateSerializedState();
 				Reload();
 			}
@@ -49,7 +49,7 @@ namespace ZeludeEditor
 		}
 
 		private List<SkinnedMeshRenderer> _skinnedMeshRenderers;
-		private bool _showCombined;
+		private bool _showCollapsed;
 		private bool _sortAlphabetically;
 		private bool _showIndex;
 
@@ -66,7 +66,7 @@ namespace ZeludeEditor
 		{
 			if (state is BlendShapesListState listState)
 			{
-				listState.ShowCombined = _showCombined;
+				listState.ShowCollapsed = _showCollapsed;
 				listState.SortAlphabetically = _sortAlphabetically;
 				listState.ShowIndex = _showIndex;
 			}
@@ -76,7 +76,7 @@ namespace ZeludeEditor
 		{
 			if (state is BlendShapesListState listState)
 			{
-				_showCombined = listState.ShowCombined;
+				_showCollapsed = listState.ShowCollapsed;
 				_sortAlphabetically = listState.SortAlphabetically;
 				_showIndex = listState.ShowIndex;
 			}
@@ -89,7 +89,7 @@ namespace ZeludeEditor
 
 		protected override TreeViewItem BuildRoot()
 		{
-			var item = _showCombined ? GetCombinedTree() : GetFlatTree();
+			var item = _showCollapsed ? GetCombinedTree() : GetFlatTree();
 			if (_sortAlphabetically)
 				SortByDisplayNameRecursive(item);
 			return item;
@@ -220,11 +220,12 @@ namespace ZeludeEditor
 			public string GetTooltip(bool showIndex) => String.Join(Environment.NewLine, BlendShapes.Select(x => x.GetPath(showIndex)));
 			public string GetName(bool showIndex)
 			{
-				if (BlendShapes.Count == 1)
+				int targetIndex = BlendShapes[0].BlendShapeIndex;
+				bool allIndicesEqual = !BlendShapes.Any(x => x.BlendShapeIndex != targetIndex);
+				if (allIndicesEqual)
 					return BlendShapes[0].GetName(showIndex);
-				if (showIndex)
-					return BlendShape.FormatName(BlendShapes[0].Name, string.Join(",", BlendShapes.Select(x => x.BlendShapeIndex.ToString())));
-				return BlendShapes[0].Name;
+
+				return BlendShape.FormatName(BlendShapes[0].Name, "?");
 			}
 		}
 
@@ -283,7 +284,7 @@ namespace ZeludeEditor
 	[System.Serializable]
 	public class BlendShapesListState : TreeViewState
 	{
-		public bool ShowCombined;
+		public bool ShowCollapsed;
 		public bool SortAlphabetically;
 		public bool ShowIndex;
 	}
