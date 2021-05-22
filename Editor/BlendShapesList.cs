@@ -21,6 +21,7 @@ namespace ZeludeEditor
 				_showCollapsed = value;
 				UpdateSerializedState();
 				Reload();
+				ExpandAll();
 			}
 		}
 
