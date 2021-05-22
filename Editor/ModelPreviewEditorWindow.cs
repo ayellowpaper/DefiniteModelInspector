@@ -25,9 +25,9 @@ namespace ZeludeEditor
 		private GameObject _ground;
 		private PreviewScene _previewScene;
 		private MeshGroup _meshGroup;
-		private MeshGroupHierarchy _hierarchy;
 		private Material _handleMat;
 		private UVTextureGenerator _uvTexture;
+		private HierarchySubEditor _hierarchyEditor;
 		private BlendShapesSubEditor _blendShapesEditor;
 		private MeshGroupDrawer _vertexDrawer;
 		private MeshGroupDrawer _normalDrawer;
@@ -41,6 +41,8 @@ namespace ZeludeEditor
 		private PreviewSceneMotion _previewSceneMotion;
 		[SerializeField]
 		private MeshPreviewSettings _meshPreviewSettings;
+		[SerializeField]
+		private TreeViewState _meshGroupHierarchyState = new TreeViewState();
 		[SerializeField]
 		private BlendShapesListState _blendShapesListState = new BlendShapesListState();
 
@@ -165,13 +167,12 @@ namespace ZeludeEditor
 			_viewport.contextType = ContextType.Editor;
 			_viewport.onGUIHandler = OnViewportGUI;
 
-			var hierarchyPane = uxml.Q("hierarchy-pane-content");
-			var hierarchyGui = new IMGUIContainer();
-			hierarchyPane.Add(hierarchyGui);
-			hierarchyGui.cullingEnabled = false;
-			hierarchyGui.contextType = ContextType.Editor;
-			hierarchyGui.onGUIHandler = OnHierarchyGUI;
-			hierarchyGui.style.flexGrow = 1;
+			var hierarchyPane = uxml.Q<Pane>("hierarchy-pane");
+			hierarchyPane.TitleElement.AddToClassList("pane__title--thin-top");
+			_hierarchyEditor = new HierarchySubEditor();
+			_hierarchyEditor.name = "hierarchy-editor";
+			_hierarchyEditor.AddToClassList("pane__content");
+			hierarchyPane.Add(_hierarchyEditor);
 
 			var blendShapesPane = uxml.Q("blendshapes-pane");
 			_blendShapesEditor = new BlendShapesSubEditor();
@@ -254,7 +255,7 @@ namespace ZeludeEditor
 
 			_meshGroup = new MeshGroup(_previewGO);
 
-			_hierarchy = new MeshGroupHierarchy(_meshGroup, new TreeViewState());
+			_hierarchyEditor.SetMeshGroupHierarchy(new MeshGroupHierarchy(_meshGroup, _meshGroupHierarchyState));
 
 			var renderers = _previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true);
 			bool hasBlendShapes = renderers.Any(renderer => renderer.sharedMesh.blendShapeCount > 0);
@@ -325,11 +326,6 @@ namespace ZeludeEditor
 			_previewScene.OnGUI(viewportRect);
 		}
 
-		private void OnHierarchyGUI()
-		{
-			_hierarchy.OnGUI(GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true)));
-		}
-
 		private void OnGUI()
 		{
 			Repaint();
@@ -376,7 +372,7 @@ namespace ZeludeEditor
 
 		private void DoToolHandles()
 		{
-			var selection = _hierarchy.GetSelectedObjects();
+			var selection = _hierarchyEditor.MeshGroupHierarchy.GetSelectedObjects();
 			var count = selection.Count();
 			if (count <= 0) return;
 			Vector3 position = Vector3.zero;
@@ -398,13 +394,13 @@ namespace ZeludeEditor
 			{
 				var go = HandleUtility.PickGameObject(Event.current.mousePosition, false);
 				if (go == null)
-					_hierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
+					_hierarchyEditor.MeshGroupHierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
 				else
 				{
-					if (_hierarchy.AvailableIDs.Contains(go.GetInstanceID()))
-						_hierarchy.SetSelection(new List<int>() { go.GetInstanceID() }, TreeViewSelectionOptions.FireSelectionChanged | TreeViewSelectionOptions.RevealAndFrame);
+					if (_hierarchyEditor.MeshGroupHierarchy.AvailableIDs.Contains(go.GetInstanceID()))
+						_hierarchyEditor.MeshGroupHierarchy.SetSelection(new List<int>() { go.GetInstanceID() }, TreeViewSelectionOptions.FireSelectionChanged | TreeViewSelectionOptions.RevealAndFrame);
 					else
-						_hierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
+						_hierarchyEditor.MeshGroupHierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
 				}
 			}
 		}

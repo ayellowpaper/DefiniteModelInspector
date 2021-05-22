@@ -30,12 +30,7 @@
 		</editor:Toolbar>
 		<engine:TwoPaneSplitView name="content-container" fixed-pane-index="0" fixed-pane-initial-dimension="300">
 			<engine:TwoPaneSplitView name="details-pane" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="200">
-				<engine:VisualElement name="hierarchy-pane" class="pane-container">
-					<engine:VisualElement class="pane__title pane__title--thin-top">
-						<engine:TextElement text="Hierarchy"/>
-					</engine:VisualElement>
-					<engine:VisualElement name="hierarchy-pane-content" class="pane__content"/>
-				</engine:VisualElement>
+				<zeludeEditor:Pane title="Hierarchy" name="hierarchy-pane" class="pane"/>
 				<zeludeEditor:Pane title="Blendshapes" name="blendshapes-pane" class="pane"/>
 			</engine:TwoPaneSplitView>
 			<engine:VisualElement name="viewport-pane-container">

@@ -10,13 +10,7 @@ namespace ZeludeEditor
 {
 	public class Pane : VisualElement
 	{
-		private TextElement _titleElement;
-
-		public string Title
-		{
-			get => _titleElement.text;
-			set => _titleElement.text = value;
-		}
+		public TextElement TitleElement { get; private set; }
 
 		public Pane() : this("Title")
 		{
@@ -24,11 +18,17 @@ namespace ZeludeEditor
 
 		public Pane(string title)
 		{
-			_titleElement = new TextElement();
-			_titleElement.AddToClassList("pane__title");
-			_titleElement.text = title;
-			this.Add(_titleElement);
+			TitleElement = new TextElement();
+			TitleElement.AddToClassList("pane__title");
+			TitleElement.text = title;
+			this.Add(TitleElement);
 			this.AddToClassList("pane");
+		}
+
+		public string Title
+		{
+			get => TitleElement.text;
+			set => TitleElement.text = value;
 		}
 
 		public new class UxmlFactory : UxmlFactory<Pane, UxmlTraits> { }
@@ -45,7 +45,7 @@ namespace ZeludeEditor
 			public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
 			{
 				base.Init(ve, bag, cc);
-				((Pane)ve)._titleElement.text = _title.GetValueFromBag(bag, cc);
+				((Pane)ve).TitleElement.text = _title.GetValueFromBag(bag, cc);
 			}
 		}
 	}

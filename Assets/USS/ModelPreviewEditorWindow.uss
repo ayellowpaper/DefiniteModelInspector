@@ -60,6 +60,7 @@ Toolbar {
 	-unity-font-style: bold;
 	flex-grow: 1;
 	font-size: 14px;
+	margin-left: 1px;
 }
 
 #viewport-toolbar {
