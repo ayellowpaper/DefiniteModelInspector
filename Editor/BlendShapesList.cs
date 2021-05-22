@@ -29,7 +29,7 @@ namespace ZeludeEditor
 			get => _sortAlphabetically;
 			set
 			{
-				if (_sortAlphabetically != value) return;
+				if (_sortAlphabetically == value) return;
 				_sortAlphabetically = value;
 				UpdateSerializedState();
 				Reload();
@@ -87,7 +87,13 @@ namespace ZeludeEditor
 			_skinnedMeshRenderers = renderers.ToList();
 		}
 
-		protected override TreeViewItem BuildRoot() => _showCombined ? GetCombinedTree() : GetFlatTree();
+		protected override TreeViewItem BuildRoot()
+		{
+			var item = _showCombined ? GetCombinedTree() : GetFlatTree();
+			if (_sortAlphabetically)
+				SortByDisplayNameRecursive(item);
+			return item;
+		}
 
 		private TreeViewItem GetFlatTree()
 		{
@@ -109,6 +115,21 @@ namespace ZeludeEditor
 			}
 
 			return root;
+		}
+
+		private void OrderByDisplayName(TreeViewItem item)
+		{
+			item.children = item.children.OrderBy(x => x.displayName).ToList();
+		}
+
+		private void SortByDisplayNameRecursive(TreeViewItem item)
+		{
+			OrderByDisplayName(item);
+			foreach (var child in item.children)
+			{
+				if (child.hasChildren && child.children.Count > 1)
+					SortByDisplayNameRecursive(child);
+			}
 		}
 
 		private TreeViewItem GetCombinedTree()
