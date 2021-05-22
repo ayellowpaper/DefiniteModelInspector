@@ -36,9 +36,22 @@ namespace ZeludeEditor
 			}
 		}
 
+		public bool ShowIndex
+		{
+			get => _showIndex;
+			set
+			{
+				if (_showIndex == value) return;
+				_showIndex = value;
+				UpdateSerializedState();
+				Reload();
+			}
+		}
+
 		private List<SkinnedMeshRenderer> _skinnedMeshRenderers;
 		private bool _showCombined;
 		private bool _sortAlphabetically;
+		private bool _showIndex;
 
 		public BlendShapesList(IEnumerable<SkinnedMeshRenderer> renderers, BlendShapesListState state) : base(state)
 		{
@@ -55,6 +68,7 @@ namespace ZeludeEditor
 			{
 				listState.ShowCombined = _showCombined;
 				listState.SortAlphabetically = _sortAlphabetically;
+				listState.ShowIndex = _showIndex;
 			}
 		}
 
@@ -64,6 +78,7 @@ namespace ZeludeEditor
 			{
 				_showCombined = listState.ShowCombined;
 				_sortAlphabetically = listState.SortAlphabetically;
+				_showIndex = listState.ShowIndex;
 			}
 		}
 
@@ -151,7 +166,7 @@ namespace ZeludeEditor
 				var rect = args.rowRect;
 				rect.xMin += GetContentIndent(blendShapeItem);
 				EditorGUIUtility.labelWidth = 100;
-				var content = EditorGUIUtility.TrTextContent(blendShapeItem.displayName, blendShapeItem.GetTooltip());
+				var content = EditorGUIUtility.TrTextContent(blendShapeItem.GetName(_showIndex), blendShapeItem.GetTooltip(_showIndex));
 				EditorGUI.BeginChangeCheck();
 				var newValue = EditorGUI.Slider(rect, content, blendShapeItem.NormalizedWeight, 0f, 1f);
 				if (EditorGUI.EndChangeCheck())
@@ -169,10 +184,6 @@ namespace ZeludeEditor
 
 		private class BlendShapeItem : TreeViewItem
 		{
-			public BlendShapeItem(int id, int depth, BlendShape blendShape) : base(id, depth, blendShape.Name) => BlendShapes = new List<BlendShape>() { blendShape };
-			public BlendShapeItem(int id, int depth, string displayName, BlendShape blendShape) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>() { blendShape };
-			public BlendShapeItem(int id, int depth, string displayName, IEnumerable<BlendShape> blendShapes) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>(blendShapes);
-
 			public List<BlendShape> BlendShapes { get; private set; }
 			public float NormalizedWeight
 			{
@@ -180,14 +191,25 @@ namespace ZeludeEditor
 				set => BlendShapes.ForEach(x => x.NormaizedWeight = value);
 			}
 
-			public string GetTooltip()
+			public BlendShapeItem(int id, int depth, BlendShape blendShape) : base(id, depth, blendShape.Name)
 			{
-				return String.Join(Environment.NewLine, BlendShapes.Select(x => x.Path));
+				BlendShapes = new List<BlendShape>() { blendShape };
+			}
+
+			public string GetTooltip(bool showIndex) => String.Join(Environment.NewLine, BlendShapes.Select(x => x.GetPath(showIndex)));
+			public string GetName(bool showIndex)
+			{
+				if (BlendShapes.Count == 1)
+					return BlendShapes[0].GetName(showIndex);
+				if (showIndex)
+					return BlendShape.FormatName(BlendShapes[0].Name, string.Join(",", BlendShapes.Select(x => x.BlendShapeIndex.ToString())));
+				return BlendShapes[0].Name;
 			}
 		}
 
 		private class BlendShape
 		{
+			public static string Format = "[{1}] {0}";
 			public readonly SkinnedMeshRenderer Renderer;
 			public readonly int BlendShapeIndex;
 			public readonly float MinValue;
@@ -217,6 +239,23 @@ namespace ZeludeEditor
 					MaxValue = Mathf.Max(MaxValue, weight);
 				}
 			}
+
+			public static string FormatName(string name, string index)
+			{
+				return string.Format(Format, name, index);
+			}
+
+			public string GetName(bool withIndex)
+			{
+				if (!withIndex) return Name;
+				return FormatName(Name, BlendShapeIndex.ToString());
+			}
+
+			public string GetPath(bool withIndex)
+			{
+				if (!withIndex) return Path;
+				return FormatName(Path, BlendShapeIndex.ToString());
+			}
 		}
 	}
 
@@ -225,5 +264,6 @@ namespace ZeludeEditor
 	{
 		public bool ShowCombined;
 		public bool SortAlphabetically;
+		public bool ShowIndex;
 	}
 }

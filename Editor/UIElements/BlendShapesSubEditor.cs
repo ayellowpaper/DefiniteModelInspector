@@ -1,10 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
-using UnityEditor.IMGUI.Controls;
 using System;
 
 namespace ZeludeEditor
@@ -13,6 +10,7 @@ namespace ZeludeEditor
 	{
 		public BlendShapesList List { get; private set; }
 		private Toggle _combinedToggle;
+		private Toggle _showIndexToggle;
 		private Toggle _sortingToggle;
 		private ToolbarSearchField _searchField;
 
@@ -22,14 +20,19 @@ namespace ZeludeEditor
 			_combinedToggle = new ToolbarToggle();
 			_combinedToggle.text = "C";
 			_combinedToggle.RegisterValueChangedCallback(HandleCombinedToggleValueChanged);
+			_showIndexToggle = new ToolbarToggle();
+			_showIndexToggle.text = "[i]";
+			_showIndexToggle.RegisterValueChangedCallback(HandleShowIndexToggleValueChanged);
 			_sortingToggle = new ToolbarToggle();
 			var image = new Image();
 			image.image = EditorGUIUtility.Load("d_AlphabeticalSorting") as Texture;
 			_sortingToggle.Add(image);
+			_sortingToggle.RegisterValueChangedCallback(HandleSortingToggleValueChanged);
 			_searchField = new ToolbarSearchField();
 			_searchField.AddToClassList("toolbar-filler");
-			_searchField.RegisterValueChangedCallback(HandleSearchFieldChanged);
+			_searchField.RegisterValueChangedCallback(HandleSearchFieldValueChanged);
 			toolbar.Add(_combinedToggle);
+			toolbar.Add(_showIndexToggle);
 			toolbar.Add(_sortingToggle);
 			toolbar.Add(_searchField);
 
@@ -43,7 +46,19 @@ namespace ZeludeEditor
 			this.Add(blendShapesGui);
 		}
 
-		private void HandleSearchFieldChanged(ChangeEvent<string> evt)
+		private void HandleSortingToggleValueChanged(ChangeEvent<bool> evt)
+		{
+			if (List != null)
+				List.SortAlphabetically = evt.newValue;
+		}
+
+		private void HandleShowIndexToggleValueChanged(ChangeEvent<bool> evt)
+		{
+			if (List != null)
+				List.ShowIndex = evt.newValue;
+		}
+
+		private void HandleSearchFieldValueChanged(ChangeEvent<string> evt)
 		{
 			if (List != null)
 				List.searchString = evt.newValue;
@@ -59,6 +74,7 @@ namespace ZeludeEditor
 		{
 			List = list;
 			_combinedToggle.SetValueWithoutNotify(list.ShowCombined);
+			_showIndexToggle.SetValueWithoutNotify(list.ShowIndex);
 			_sortingToggle.SetValueWithoutNotify(list.SortAlphabetically);
 			_searchField.SetValueWithoutNotify(list.searchString);
 		}
