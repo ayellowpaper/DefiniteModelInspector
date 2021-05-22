@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:engine="UnityEngine.UIElements"
-	xmlns:editor="UnityEditor.UIElements" xsi:schemaLocation="UnityEditor.UIElements ../../../../UIElementsSchema/UnityEditor.UIElements.xsd
-    UnityEngine.UIElements ../../../../UIElementsSchema/UnityEngine.UIElements.xsd">
+	xmlns:editor="UnityEditor.UIElements"
+	xmlns:zeludeEditor="ZeludeEditor" xsi:schemaLocation="UnityEditor.UIElements ../../../../UIElementsSchema/UnityEditor.UIElements.xsd
+    UnityEngine.UIElements ../../../../UIElementsSchema/UnityEngine.UIElements.xsd
+	ZeludeEditor.UIElements ../../../../UIElementsSchema/ZeludeEditor.xsd">
 	<engine:Template src="ToolbarToggleWithMenuTemplate.uxml" name="ToggleWithMenu" />
 	<engine:Style src="../USS/ModelPreviewEditorWindow.uss" />
 	<engine:VisualElement name="model-preview-window">
@@ -28,20 +30,15 @@
 		</editor:Toolbar>
 		<engine:TwoPaneSplitView name="content-container" fixed-pane-index="0" fixed-pane-initial-dimension="300">
 			<engine:TwoPaneSplitView name="details-pane" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="200">
-				<engine:VisualElement name="hierarchy-pane" class="pane">
+				<engine:VisualElement name="hierarchy-pane" class="pane-container">
 					<engine:VisualElement class="pane__title pane__title--thin-top">
 						<engine:TextElement text="Hierarchy"/>
 					</engine:VisualElement>
 					<engine:VisualElement name="hierarchy-pane-content" class="pane__content"/>
 				</engine:VisualElement>
-				<engine:VisualElement name="blendshapes-pane" class="pane">
-					<engine:VisualElement class="pane__title">
-						<engine:TextElement text="Blendshapes"/>
-					</engine:VisualElement>
-					<engine:VisualElement name="blendshapes-pane-content" class="pane__content"/>
-				</engine:VisualElement>
+				<zeludeEditor:Pane title="Blendshapes" name="blendshapes-pane" class="pane"/>
 			</engine:TwoPaneSplitView>
-			<engine:VisualElement name="viewport-pane">
+			<engine:VisualElement name="viewport-pane-container">
 				<editor:Toolbar name="viewport-toolbar">
 					<editor:ToolbarButton text="Ping" name="ping-asset"/>
 					<editor:ToolbarButton text="Select Asset" name="select-asset"/>

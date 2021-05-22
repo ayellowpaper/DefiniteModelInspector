@@ -1,169 +1,229 @@
+using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using System.Linq;
+using UnityEditor.UIElements;
 
 namespace ZeludeEditor
 {
-    public class BlendShapesList : TreeView
-    {
-        public bool ShowCombined {
-            get => _showCombined;
-            set {
-                if (_showCombined == value) return;
-                _showCombined = value;
-                Reload();
-            }
-        }
+	public class BlendShapesList : TreeView
+	{
+		public bool ShowCombined
+		{
+			get => _showCombined;
+			set
+			{
+				if (_showCombined == value) return;
+				_showCombined = value;
+				UpdateSerializedState();
+				Reload();
+			}
+		}
 
-        private List<SkinnedMeshRenderer> _skinnedMeshRenderers;
-        private bool _showCombined;
+		public bool SortAlphabetically
+		{
+			get => _sortAlphabetically;
+			set
+			{
+				if (_sortAlphabetically != value) return;
+				_sortAlphabetically = value;
+				UpdateSerializedState();
+				Reload();
+			}
+		}
 
-        public BlendShapesList(IEnumerable<SkinnedMeshRenderer> skinnedMeshRenderers, TreeViewState state, bool showCombined = false) : base(state)
-        {
-            _showCombined = showCombined;
-            _skinnedMeshRenderers = skinnedMeshRenderers.ToList();
-            this.getNewSelectionOverride = SelectionOverride;
-            Reload();
-            ExpandAll();
-        }
+		private List<SkinnedMeshRenderer> _skinnedMeshRenderers;
+		private bool _showCombined;
+		private bool _sortAlphabetically;
 
-        protected override TreeViewItem BuildRoot() => _showCombined ? GetCombinedTree() : GetFlatTree();
-        
-        private TreeViewItem GetFlatTree()
-        {
-            int id = -1;
-            var root = new TreeViewItem(++id, -1, "Root");
+		public BlendShapesList(IEnumerable<SkinnedMeshRenderer> renderers, BlendShapesListState state) : base(state)
+		{
+			UpdateFromSerializedState();
+			_skinnedMeshRenderers = renderers.ToList();
+			this.getNewSelectionOverride = SelectionOverride;
+			Reload();
+			ExpandAll();
+		}
 
-            foreach (var renderer in _skinnedMeshRenderers)
-            {
-                var mesh = renderer.sharedMesh;
-                int blendShapeCount = mesh.blendShapeCount;
-                if (blendShapeCount == 0) continue;
-                var skinnedMeshItem = new TreeViewItem(++id, 0, renderer.name);
-                root.AddChild(skinnedMeshItem);
-                for (int i = 0; i < blendShapeCount; i++)
-                {
-                    var blendShapeItem = new BlendShapeItem(++id, 1, mesh.GetBlendShapeName(i), new BlendShape(renderer, i));
-                    skinnedMeshItem.AddChild(blendShapeItem);
-                }
-            }
+		private void UpdateSerializedState()
+		{
+			if (state is BlendShapesListState listState)
+			{
+				listState.ShowCombined = _showCombined;
+				listState.SortAlphabetically = _sortAlphabetically;
+			}
+		}
 
-            return root;
-        }
+		private void UpdateFromSerializedState()
+		{
+			if (state is BlendShapesListState listState)
+			{
+				_showCombined = listState.ShowCombined;
+				_sortAlphabetically = listState.SortAlphabetically;
+			}
+		}
 
-        private TreeViewItem GetCombinedTree()
-        {
-            int id = -1;
-            var root = new TreeViewItem(++id, -1, "Root");
+		public void SetRenderers(IEnumerable<SkinnedMeshRenderer> renderers)
+		{
+			_skinnedMeshRenderers = renderers.ToList();
+		}
 
-            Dictionary<string, BlendShapeItem> _blendShapeItemsByName = new Dictionary<string, BlendShapeItem>();
+		protected override TreeViewItem BuildRoot() => _showCombined ? GetCombinedTree() : GetFlatTree();
 
-            foreach (var renderer in _skinnedMeshRenderers)
-            {
-                var mesh = renderer.sharedMesh;
-                int blendShapeCount = mesh.blendShapeCount;
-                if (blendShapeCount == 0) continue;
-                for (int i = 0; i < blendShapeCount; i++)
-                {
-                    string name = mesh.GetBlendShapeName(i);
-                    var blendShape = new BlendShape(renderer, i);
-                    if (_blendShapeItemsByName.TryGetValue(name, out var item))
-                        item.BlendShapes.Add(blendShape);
-                    else
-                        _blendShapeItemsByName.Add(name, new BlendShapeItem(++id, 1, $"{i}    {name}", blendShape));
-                }
-            }
+		private TreeViewItem GetFlatTree()
+		{
+			int id = -1;
+			var root = new TreeViewItem(++id, -1, "Root");
 
-            Dictionary<int, TreeViewItem> _rendererItems = new Dictionary<int, TreeViewItem>();
+			foreach (var renderer in _skinnedMeshRenderers)
+			{
+				var mesh = renderer.sharedMesh;
+				int blendShapeCount = mesh.blendShapeCount;
+				if (blendShapeCount == 0) continue;
+				var skinnedMeshItem = new TreeViewItem(++id, 0, renderer.name);
+				root.AddChild(skinnedMeshItem);
+				for (int i = 0; i < blendShapeCount; i++)
+				{
+					var blendShapeItem = new BlendShapeItem(++id, 1, new BlendShape(renderer, i));
+					skinnedMeshItem.AddChild(blendShapeItem);
+				}
+			}
 
-            foreach (var kvp in _blendShapeItemsByName)
-            {
-                int compoundID = 0;
-                foreach (var blendShape in kvp.Value.BlendShapes)
-                    compoundID = compoundID ^ blendShape.Renderer.GetInstanceID();
+			return root;
+		}
 
-                if (_rendererItems.TryGetValue(compoundID, out var treeViewItem))
-                {
-                    treeViewItem.AddChild(kvp.Value);
-                    continue;
-                }
+		private TreeViewItem GetCombinedTree()
+		{
+			int id = -1;
+			var root = new TreeViewItem(++id, -1, "Root");
 
-                string name = string.Join(" | ", kvp.Value.BlendShapes.Select(x => x.Renderer.name));
+			Dictionary<string, BlendShapeItem> _blendShapeItemsByName = new Dictionary<string, BlendShapeItem>();
 
-                var skinnedMeshRendererItem = new TreeViewItem(++id, 0, name);
-                skinnedMeshRendererItem.AddChild(kvp.Value);
-                root.AddChild(skinnedMeshRendererItem);
-                _rendererItems.Add(compoundID, skinnedMeshRendererItem);
-            }
+			foreach (var renderer in _skinnedMeshRenderers)
+			{
+				var mesh = renderer.sharedMesh;
+				int blendShapeCount = mesh.blendShapeCount;
+				if (blendShapeCount == 0) continue;
+				for (int i = 0; i < blendShapeCount; i++)
+				{
+					string name = mesh.GetBlendShapeName(i);
+					var blendShape = new BlendShape(renderer, i);
+					if (_blendShapeItemsByName.TryGetValue(name, out var item))
+						item.BlendShapes.Add(blendShape);
+					else
+						_blendShapeItemsByName.Add(name, new BlendShapeItem(++id, 1, blendShape));
+				}
+			}
 
-            return root;
-        }
+			Dictionary<int, TreeViewItem> _rendererItems = new Dictionary<int, TreeViewItem>();
 
-        protected override void RowGUI(RowGUIArgs args)
-        {
-            if (args.item is BlendShapeItem blendShapeItem)
-            {
-                var rect = args.rowRect;
-                rect.xMin += GetContentIndent(blendShapeItem);
-                EditorGUIUtility.labelWidth = 100;
-                EditorGUI.BeginChangeCheck();
-                var newValue = EditorGUI.Slider(rect, blendShapeItem.displayName, blendShapeItem.NormalizedWeight, 0f, 1f);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    foreach (var blendShape in blendShapeItem.BlendShapes)
-                        Undo.RecordObject(blendShape.Renderer, "Blendshape");
-                    blendShapeItem.NormalizedWeight = newValue;
-                }
-            }
-            else
-                base.RowGUI(args);
-        }
+			foreach (var kvp in _blendShapeItemsByName)
+			{
+				int compoundID = 0;
+				foreach (var blendShape in kvp.Value.BlendShapes)
+					compoundID = compoundID ^ blendShape.Renderer.GetInstanceID();
 
-        private List<int> SelectionOverride(TreeViewItem clickedItem, bool keepMultiSelection, bool useActionKeyAsShift) => new List<int>();
+				if (_rendererItems.TryGetValue(compoundID, out var treeViewItem))
+				{
+					treeViewItem.AddChild(kvp.Value);
+					continue;
+				}
 
-        private class BlendShapeItem : TreeViewItem
-        {
-            public List<BlendShape> BlendShapes { get; private set; }
-            public float NormalizedWeight {
-                get => BlendShapes.Sum(x => x.NormaizedWeight) / BlendShapes.Count;
-                set => BlendShapes.ForEach(x => x.NormaizedWeight = value);
-            }
+				string name = string.Join(" | ", kvp.Value.BlendShapes.Select(x => x.Renderer.name));
 
-            public BlendShapeItem(int id, int depth, string displayName, BlendShape blendShape) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>() { blendShape };
-            public BlendShapeItem(int id, int depth, string displayName, IEnumerable<BlendShape> blendShapes) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>(blendShapes);
-        }
+				var skinnedMeshRendererItem = new TreeViewItem(++id, 0, name);
+				skinnedMeshRendererItem.AddChild(kvp.Value);
+				root.AddChild(skinnedMeshRendererItem);
+				_rendererItems.Add(compoundID, skinnedMeshRendererItem);
+			}
 
-        private class BlendShape
-        {
-            public readonly SkinnedMeshRenderer Renderer;
-            public readonly int BlendShapeIndex;
-            public readonly float MinValue;
-            public readonly float MaxValue;
+			return root;
+		}
 
-            public float NormaizedWeight {
-                get => Mathf.InverseLerp(MinValue, MaxValue, Renderer.GetBlendShapeWeight(BlendShapeIndex));
-                set => Renderer.SetBlendShapeWeight(BlendShapeIndex, Mathf.Lerp(MinValue, MaxValue, Mathf.Clamp01(value)));
-            }
+		protected override void RowGUI(RowGUIArgs args)
+		{
+			if (args.item is BlendShapeItem blendShapeItem)
+			{
+				var rect = args.rowRect;
+				rect.xMin += GetContentIndent(blendShapeItem);
+				EditorGUIUtility.labelWidth = 100;
+				var content = EditorGUIUtility.TrTextContent(blendShapeItem.displayName, blendShapeItem.GetTooltip());
+				EditorGUI.BeginChangeCheck();
+				var newValue = EditorGUI.Slider(rect, content, blendShapeItem.NormalizedWeight, 0f, 1f);
+				if (EditorGUI.EndChangeCheck())
+				{
+					foreach (var blendShape in blendShapeItem.BlendShapes)
+						Undo.RecordObject(blendShape.Renderer, "Blendshape");
+					blendShapeItem.NormalizedWeight = newValue;
+				}
+			}
+			else
+				base.RowGUI(args);
+		}
 
-            public BlendShape(SkinnedMeshRenderer renderer, int blendShapeIndex)
-            {
-                Renderer = renderer;
-                BlendShapeIndex = blendShapeIndex;
+		private List<int> SelectionOverride(TreeViewItem clickedItem, bool keepMultiSelection, bool useActionKeyAsShift) => new List<int>();
 
-                var mesh = renderer.sharedMesh;
-                MinValue = 0;
-                MaxValue = 0;
-                int frameCount = mesh.GetBlendShapeFrameCount(blendShapeIndex);
-                for (int i = 0; i < frameCount; i++)
-                {
-                    float weight = mesh.GetBlendShapeFrameWeight(blendShapeIndex, i);
-                    MinValue = Mathf.Min(MinValue, weight);
-                    MaxValue = Mathf.Max(MaxValue, weight);
-                }
-            }
-        }
-    }
+		private class BlendShapeItem : TreeViewItem
+		{
+			public BlendShapeItem(int id, int depth, BlendShape blendShape) : base(id, depth, blendShape.Name) => BlendShapes = new List<BlendShape>() { blendShape };
+			public BlendShapeItem(int id, int depth, string displayName, BlendShape blendShape) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>() { blendShape };
+			public BlendShapeItem(int id, int depth, string displayName, IEnumerable<BlendShape> blendShapes) : base(id, depth, displayName) => BlendShapes = new List<BlendShape>(blendShapes);
+
+			public List<BlendShape> BlendShapes { get; private set; }
+			public float NormalizedWeight
+			{
+				get => BlendShapes.Sum(x => x.NormaizedWeight) / BlendShapes.Count;
+				set => BlendShapes.ForEach(x => x.NormaizedWeight = value);
+			}
+
+			public string GetTooltip()
+			{
+				return String.Join(Environment.NewLine, BlendShapes.Select(x => x.Path));
+			}
+		}
+
+		private class BlendShape
+		{
+			public readonly SkinnedMeshRenderer Renderer;
+			public readonly int BlendShapeIndex;
+			public readonly float MinValue;
+			public readonly float MaxValue;
+			public string Name => Renderer.sharedMesh.GetBlendShapeName(BlendShapeIndex);
+			public string Path => Renderer.name + "/" + Name;
+
+			public float NormaizedWeight
+			{
+				get => Mathf.InverseLerp(MinValue, MaxValue, Renderer.GetBlendShapeWeight(BlendShapeIndex));
+				set => Renderer.SetBlendShapeWeight(BlendShapeIndex, Mathf.Lerp(MinValue, MaxValue, Mathf.Clamp01(value)));
+			}
+
+			public BlendShape(SkinnedMeshRenderer renderer, int blendShapeIndex)
+			{
+				Renderer = renderer;
+				BlendShapeIndex = blendShapeIndex;
+
+				var mesh = renderer.sharedMesh;
+				MinValue = 0;
+				MaxValue = 0;
+				int frameCount = mesh.GetBlendShapeFrameCount(blendShapeIndex);
+				for (int i = 0; i < frameCount; i++)
+				{
+					float weight = mesh.GetBlendShapeFrameWeight(blendShapeIndex, i);
+					MinValue = Mathf.Min(MinValue, weight);
+					MaxValue = Mathf.Max(MaxValue, weight);
+				}
+			}
+		}
+	}
+
+	[System.Serializable]
+	public class BlendShapesListState : TreeViewState
+	{
+		public bool ShowCombined;
+		public bool SortAlphabetically;
+	}
 }

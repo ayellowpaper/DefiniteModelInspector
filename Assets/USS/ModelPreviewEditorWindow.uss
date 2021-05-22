@@ -79,20 +79,13 @@ Toolbar {
 	flex-direction: row;
 }
 
-.pane {
-	flex-grow: 1;
-}
-
 .pane__title {
 	background-color: #505050;
 	border-width: 1px 0px;
+	padding: 4px;
 	border-color: #282828;
 	-unity-text-align: middle-center;
 	-unity-font-style: bold;
-}
-
-.pane__title > TextElement {
-	padding: 4px;
 }
 
 .pane__title--thin-top {
@@ -103,8 +96,19 @@ Toolbar {
 	flex-grow: 1;
 }
 
+.toolbar-filler {
+	width: auto;
+	flex-basis: 0;
+	flex-grow: 1;
+}
+
 #blendshapes-pane-content {
-	margin: 1px 4px 0px 0px;
+	margin: 0px 0px 0px 0px;
+	flex-grow: 1;
+}
+
+#blendshapes-pane {
+	flex-grow: 1;
 }
 
 #unity-dragline-anchor {
