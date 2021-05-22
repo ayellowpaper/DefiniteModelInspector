@@ -1,58 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<engine:UXML
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:engine="UnityEngine.UIElements"
-    xmlns:editor="UnityEditor.UIElements"
-    xsi:schemaLocation="UnityEditor.UIElements ../../../../UIElementsSchema/UnityEditor.UIElements.xsd
-    UnityEngine.UIElements ../../../../UIElementsSchema/UnityEngine.UIElements.xsd"
->
-  <engine:Template src="ToolbarToggleWithMenuTemplate.uxml" name="ToggleWithMenu" />
-  <engine:Style src="../USS/ModelPreviewEditorWindow.uss" />
-  <engine:VisualElement name="model-preview-window">
-    <editor:Toolbar>
-      <editor:ToolbarToggle text="Vertices" name="toggle-vertices"></editor:ToolbarToggle>
-      <editor:ToolbarToggle text="Normals" name="toggle-normals"></editor:ToolbarToggle>
-      <editor:ToolbarToggle text="Tangents" name="toggle-tangents"></editor:ToolbarToggle>
-      <editor:ToolbarToggle text="Binormals" name="toggle-binormals"></editor:ToolbarToggle>
-      <editor:ToolbarSpacer></editor:ToolbarSpacer>
-      <editor:ToolbarToggle name="toggle-grid">
-        <engine:Image class="grid-image"/>
-      </editor:ToolbarToggle>
-      <editor:ToolbarToggle name="toggle-ground">
-        <engine:Image class="ground-image"/>
-      </editor:ToolbarToggle>
-      <editor:ToolbarSpacer></editor:ToolbarSpacer>
-      <engine:Instance class="toggle-with-menu" template="ToggleWithMenu">
-        <engine:AttributeOverrides element-name="toggle" text="UV: 0" />
-        <engine:AttributeOverrides element-name="toggle" name="toggle-uv" />
-        <engine:AttributeOverrides element-name="toggle-menu" name="toggle-uv-menu" />
-      </engine:Instance>
-      <editor:ToolbarSpacer style="flex-grow: 1"></editor:ToolbarSpacer>
-    </editor:Toolbar>
-    <engine:TwoPaneSplitView name="content-container" fixed-pane-index="0" fixed-pane-initial-dimension="300">
-      <engine:TwoPaneSplitView name="details-pane" class="pane" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="200">
-        <engine:VisualElement name="hierarchy-pane" class="pane">
-          <engine:TextElement text="Hierarchy" class="pane__title pane__title--thin-top"/>
-          <engine:VisualElement name="hierarchy-pane__content" class="pane__content"/>
-        </engine:VisualElement>
-        <engine:VisualElement name="blendshapes-pane" class="pane">
-          <engine:TextElement text="Blendshapes" class="pane__title"/>
-          <engine:VisualElement name="blendshapes-pane__content" class="pane__content"/>
-        </engine:VisualElement>
-      </engine:TwoPaneSplitView>
-      <engine:VisualElement name="viewport-pane">
-        <editor:Toolbar name="viewport-toolbar">
-          <editor:ToolbarButton text="Ping" name="ping-asset"/>
-          <editor:ToolbarButton text="Select Asset" name="select-asset"/>
-        </editor:Toolbar>
-        <engine:IMGUIContainer name="viewport">
-          <engine:VisualElement name="viewport-stats" picking-mode="Ignore">
-          </engine:VisualElement>
-          <engine:VisualElement name="uv-window" picking-mode="Ignore">
-            <engine:Image name="uv-image" picking-mode="Ignore"/>
-          </engine:VisualElement>
-        </engine:IMGUIContainer>
-      </engine:VisualElement>
-    </engine:TwoPaneSplitView>
-  </engine:VisualElement>
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:engine="UnityEngine.UIElements"
+	xmlns:editor="UnityEditor.UIElements" xsi:schemaLocation="UnityEditor.UIElements ../../../../UIElementsSchema/UnityEditor.UIElements.xsd
+    UnityEngine.UIElements ../../../../UIElementsSchema/UnityEngine.UIElements.xsd">
+	<engine:Template src="ToolbarToggleWithMenuTemplate.uxml" name="ToggleWithMenu" />
+	<engine:Style src="../USS/ModelPreviewEditorWindow.uss" />
+	<engine:VisualElement name="model-preview-window">
+		<editor:Toolbar>
+			<editor:ToolbarToggle text="Vertices" name="toggle-vertices"></editor:ToolbarToggle>
+			<editor:ToolbarToggle text="Normals" name="toggle-normals"></editor:ToolbarToggle>
+			<editor:ToolbarToggle text="Tangents" name="toggle-tangents"></editor:ToolbarToggle>
+			<editor:ToolbarToggle text="Binormals" name="toggle-binormals"></editor:ToolbarToggle>
+			<editor:ToolbarSpacer></editor:ToolbarSpacer>
+			<editor:ToolbarToggle name="toggle-grid">
+				<engine:Image class="grid-image"/>
+			</editor:ToolbarToggle>
+			<editor:ToolbarToggle name="toggle-ground">
+				<engine:Image class="ground-image"/>
+			</editor:ToolbarToggle>
+			<editor:ToolbarSpacer></editor:ToolbarSpacer>
+			<engine:Instance class="toggle-with-menu" template="ToggleWithMenu">
+				<engine:AttributeOverrides element-name="toggle" text="UV: 0" />
+				<engine:AttributeOverrides element-name="toggle" name="toggle-uv" />
+				<engine:AttributeOverrides element-name="toggle-menu" name="toggle-uv-menu" />
+			</engine:Instance>
+			<editor:ToolbarSpacer style="flex-grow: 1"></editor:ToolbarSpacer>
+		</editor:Toolbar>
+		<engine:TwoPaneSplitView name="content-container" fixed-pane-index="0" fixed-pane-initial-dimension="300">
+			<engine:TwoPaneSplitView name="details-pane" orientation="Vertical" fixed-pane-index="1" fixed-pane-initial-dimension="200">
+				<engine:VisualElement name="hierarchy-pane" class="pane">
+					<engine:VisualElement class="pane__title pane__title--thin-top">
+						<engine:TextElement text="Hierarchy"/>
+					</engine:VisualElement>
+					<engine:VisualElement name="hierarchy-pane-content" class="pane__content"/>
+				</engine:VisualElement>
+				<engine:VisualElement name="blendshapes-pane" class="pane">
+					<engine:VisualElement class="pane__title">
+						<engine:TextElement text="Blendshapes"/>
+					</engine:VisualElement>
+					<engine:VisualElement name="blendshapes-pane-content" class="pane__content"/>
+				</engine:VisualElement>
+			</engine:TwoPaneSplitView>
+			<engine:VisualElement name="viewport-pane">
+				<editor:Toolbar name="viewport-toolbar">
+					<editor:ToolbarButton text="Ping" name="ping-asset"/>
+					<editor:ToolbarButton text="Select Asset" name="select-asset"/>
+				</editor:Toolbar>
+				<engine:IMGUIContainer name="viewport">
+					<engine:VisualElement name="viewport-stats" picking-mode="Ignore">
+					</engine:VisualElement>
+					<engine:VisualElement name="uv-window" picking-mode="Ignore">
+						<engine:Image name="uv-image" picking-mode="Ignore"/>
+					</engine:VisualElement>
+				</engine:IMGUIContainer>
+			</engine:VisualElement>
+		</engine:TwoPaneSplitView>
+	</engine:VisualElement>
 </engine:UXML>

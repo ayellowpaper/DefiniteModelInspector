@@ -28,9 +28,6 @@
 	bottom: 10px;
 }
 
-#uv-image {
-}
-
 Toolbar {
 	height: 22px;
 }
@@ -87,12 +84,15 @@ Toolbar {
 }
 
 .pane__title {
-	padding: 4px;
 	background-color: #505050;
 	border-width: 1px 0px;
 	border-color: #282828;
 	-unity-text-align: middle-center;
 	-unity-font-style: bold;
+}
+
+.pane__title > TextElement {
+	padding: 4px;
 }
 
 .pane__title--thin-top {
@@ -103,7 +103,7 @@ Toolbar {
 	flex-grow: 1;
 }
 
-#blendshapes-pane__content {
+#blendshapes-pane-content {
 	margin: 1px 4px 0px 0px;
 }
 
@@ -115,7 +115,7 @@ Toolbar {
 	background-color: #BABABA;
 }
 
-#details-pane, #viewport {
+#details-pane, #viewport-pane {
 	min-width: 180px;
 }
 

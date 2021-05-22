@@ -177,7 +177,7 @@ namespace ZeludeEditor
             _viewport.contextType = ContextType.Editor;
             _viewport.onGUIHandler = OnViewportGUI;
 
-            var hierarchyPane = uxml.Q("hierarchy-pane__content");
+            var hierarchyPane = uxml.Q("hierarchy-pane-content");
             var hierarchyGui = new IMGUIContainer();
             hierarchyPane.Add(hierarchyGui);
             hierarchyGui.cullingEnabled = false;
@@ -185,7 +185,7 @@ namespace ZeludeEditor
             hierarchyGui.onGUIHandler = OnHierarchyGUI;
             hierarchyGui.style.flexGrow = 1;
 
-            var blendShapesPane = uxml.Q("blendshapes-pane__content");
+            var blendShapesPane = uxml.Q("blendshapes-pane-content");
             var blendShapesGui = new IMGUIContainer();
             blendShapesPane.Add(blendShapesGui);
             blendShapesGui.cullingEnabled = false;
