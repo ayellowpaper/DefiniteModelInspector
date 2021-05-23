@@ -33,7 +33,7 @@
 				<zeludeEditor:Pane title="Hierarchy" name="hierarchy-pane" class="pane"/>
 				<zeludeEditor:Pane title="Blendshapes" name="blendshapes-pane" class="pane"/>
 			</engine:TwoPaneSplitView>
-			<engine:VisualElement name="viewport-pane-container">
+			<engine:VisualElement name="viewport-pane">
 				<editor:Toolbar name="viewport-toolbar">
 					<editor:ToolbarButton text="Ping" name="ping-asset"/>
 					<editor:ToolbarButton text="Select Asset" name="select-asset"/>

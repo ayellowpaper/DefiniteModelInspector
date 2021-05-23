@@ -34,6 +34,8 @@ namespace ZeludeEditor
 		private MeshGroupDrawer _binormalDrawer;
 		private MeshGroupDrawer _tangentDrawer;
 		private IMGUIContainer _viewport;
+		private TwoPaneSplitView _detailsSplitView;
+		private EventCallback<EventBase> _detailsCallback;
 		public UVTextureGenerator UVTexture => _uvTexture;
 		public MeshGroup MeshGroup => _meshGroup;
 
@@ -138,11 +140,6 @@ namespace ZeludeEditor
 			//_handleMat.SetInt("_HandleZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
 			_handleMat.hideFlags = HideFlags.HideAndDontSave;
 
-			_vertexDrawer = new VertexDrawer(_meshGroup);
-			_tangentDrawer = new TangentDrawer(_meshGroup);
-			_normalDrawer = new NormalDrawer(_meshGroup);
-			_binormalDrawer = new BinormalDrawer(_meshGroup);
-
 			_registeredEditors.Add(_guidString, this);
 
 			// CREATE UXML HERE
@@ -179,6 +176,8 @@ namespace ZeludeEditor
 			_blendShapesEditor.name = "blendshapes-editor";
 			_blendShapesEditor.AddToClassList("pane__content");
 			blendShapesPane.Add(_blendShapesEditor);
+
+			_detailsSplitView = rootVisualElement.Q<TwoPaneSplitView>("details-pane");
 
 			BindToggle(uxml.Q<BaseField<bool>>("toggle-vertices"), () => _meshPreviewSettings.ShowVertices, x => _meshPreviewSettings.ShowVertices = x);
 			BindToggle(uxml.Q<BaseField<bool>>("toggle-normals"), () => _meshPreviewSettings.ShowNormals, x => _meshPreviewSettings.ShowNormals = x);
@@ -259,20 +258,39 @@ namespace ZeludeEditor
 
 			var renderers = _previewGO.GetComponentsInChildren<SkinnedMeshRenderer>(true);
 			bool hasBlendShapes = renderers.Any(renderer => renderer.sharedMesh.blendShapeCount > 0);
-			var detailsPane = rootVisualElement.Q<TwoPaneSplitView>("details-pane");
 			if (hasBlendShapes)
 			{
 				_blendShapesEditor.SetList(new BlendShapesList(renderers, _blendShapesListState));
-				detailsPane.UnCollapse();
+				/// TODO: This is an ugly workaround because collapsing and uncollapsing doesn't work directly for some reason.
+				DelayedDetailsSplitViewCallback(x => _detailsSplitView.UnCollapse());
 			}
 			else
-				detailsPane.CollapseChild(1);
+				/// TODO: This is an ugly workaround because collapsing and uncollapsing doesn't work directly for some reason.
+				DelayedDetailsSplitViewCallback(x => _detailsSplitView.CollapseChild(1));
 
 			_uvTexture = new UVTextureGenerator();
 			foreach (var meshinfo in _meshGroup.MeshInfos)
 				_uvTexture.MeshInfos.Add(meshinfo);
 
 			UpdateStatsLabel();
+
+			_vertexDrawer = new VertexDrawer(_meshGroup);
+			_tangentDrawer = new TangentDrawer(_meshGroup);
+			_normalDrawer = new NormalDrawer(_meshGroup);
+			_binormalDrawer = new BinormalDrawer(_meshGroup);
+		}
+
+		private void DelayedDetailsSplitViewCallback(EventCallback<EventBase> callback)
+		{
+			_detailsCallback = callback;
+			_detailsSplitView.UnregisterCallback<GeometryChangedEvent>(HandleDelayedDetailsSplitViewCallback);
+			_detailsSplitView.RegisterCallback<GeometryChangedEvent>(HandleDelayedDetailsSplitViewCallback);
+		}
+
+		private void HandleDelayedDetailsSplitViewCallback(GeometryChangedEvent callback)
+		{
+			_detailsSplitView.UnregisterCallback<GeometryChangedEvent>(HandleDelayedDetailsSplitViewCallback);
+			_detailsCallback?.Invoke(callback);
 		}
 
 		private void UpdateStatsLabel()
@@ -397,7 +415,7 @@ namespace ZeludeEditor
 					_hierarchyEditor.MeshGroupHierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
 				else
 				{
-					if (_hierarchyEditor.MeshGroupHierarchy.AvailableIDs.Contains(go.GetInstanceID()))
+					if (_hierarchyEditor.MeshGroupHierarchy.AvailableGameObjectIDs.Contains(go.GetInstanceID()))
 						_hierarchyEditor.MeshGroupHierarchy.SetSelection(new List<int>() { go.GetInstanceID() }, TreeViewSelectionOptions.FireSelectionChanged | TreeViewSelectionOptions.RevealAndFrame);
 					else
 						_hierarchyEditor.MeshGroupHierarchy.SetSelection(new List<int>(), TreeViewSelectionOptions.FireSelectionChanged);
