@@ -66,6 +66,8 @@ namespace ZeludeEditor
 		[OnOpenAsset(1)]
 		public static bool OpenAssetHook(int instanceID, int line, int column)
 		{
+			if (Event.current.alt) return false;
+
 			var obj = EditorUtility.InstanceIDToObject(instanceID);
 			var assetPath = AssetDatabase.GetAssetPath(obj);
 			var importer = AssetImporter.GetAtPath(assetPath);
