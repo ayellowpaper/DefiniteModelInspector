@@ -63,6 +63,15 @@ namespace ZeludeEditor
 			ExpandAll();
 		}
 
+		public void ResetBlendShapes()
+		{
+			foreach (var item in GetRows())
+			{
+				var blendShapeItem = (item as BlendShapeItem);
+				blendShapeItem?.Reset();
+			}
+		}
+
 		private void UpdateSerializedState()
 		{
 			if (state is BlendShapesListState listState)
@@ -209,8 +218,8 @@ namespace ZeludeEditor
 			public List<BlendShape> BlendShapes { get; private set; }
 			public float NormalizedWeight
 			{
-				get => BlendShapes.Sum(x => x.NormaizedWeight) / BlendShapes.Count;
-				set => BlendShapes.ForEach(x => x.NormaizedWeight = value);
+				get => BlendShapes.Sum(x => x.NormalizedWeight) / BlendShapes.Count;
+				set => BlendShapes.ForEach(x => x.NormalizedWeight = value);
 			}
 
 			public BlendShapeItem(int id, int depth, BlendShape blendShape) : base(id, depth, blendShape.Name)
@@ -219,6 +228,7 @@ namespace ZeludeEditor
 			}
 
 			public string GetTooltip(bool showIndex) => String.Join(Environment.NewLine, BlendShapes.Select(x => x.GetPath(showIndex)));
+
 			public string GetName(bool showIndex)
 			{
 				int targetIndex = BlendShapes[0].BlendShapeIndex;
@@ -227,6 +237,12 @@ namespace ZeludeEditor
 					return BlendShapes[0].GetName(showIndex);
 
 				return showIndex ? BlendShape.FormatName(BlendShapes[0].Name, "?") : BlendShapes[0].Name;
+			}
+
+			public void Reset()
+			{
+				foreach (var blendshape in BlendShapes)
+					blendshape.Reset();
 			}
 		}
 
@@ -240,7 +256,7 @@ namespace ZeludeEditor
 			public string Name => Renderer.sharedMesh.GetBlendShapeName(BlendShapeIndex);
 			public string Path => Renderer.name + "/" + Name;
 
-			public float NormaizedWeight
+			public float NormalizedWeight
 			{
 				get => Mathf.InverseLerp(MinValue, MaxValue, Renderer.GetBlendShapeWeight(BlendShapeIndex));
 				set => Renderer.SetBlendShapeWeight(BlendShapeIndex, Mathf.Lerp(MinValue, MaxValue, Mathf.Clamp01(value)));
@@ -278,6 +294,11 @@ namespace ZeludeEditor
 			{
 				if (!withIndex) return Path;
 				return FormatName(Path, BlendShapeIndex.ToString());
+			}
+
+			public void Reset()
+			{
+				NormalizedWeight = 0f;
 			}
 		}
 	}

@@ -28,9 +28,9 @@ namespace ZeludeEditor
 			_showIndexToggle.RegisterValueChangedCallback(HandleShowIndexToggleValueChanged);
 
 			_sortingToggle = new ToolbarToggle();
-			var image = new Image();
-			image.image = EditorGUIUtility.Load("d_AlphabeticalSorting") as Texture;
-			_sortingToggle.Add(image);
+			var sortingImage = new Image();
+			sortingImage.image = EditorGUIUtility.Load("d_AlphabeticalSorting") as Texture;
+			_sortingToggle.Add(sortingImage);
 			_sortingToggle.tooltip = "Sort alphabetically.";
 			_sortingToggle.RegisterValueChangedCallback(HandleSortingToggleValueChanged);
 
@@ -38,10 +38,19 @@ namespace ZeludeEditor
 			_searchField.AddToClassList("toolbar-filler");
 			_searchField.RegisterValueChangedCallback(HandleSearchFieldValueChanged);
 
+			var _reset = new ToolbarButton();
+			var resetImage = new Image();
+			resetImage.image = AssetDatabase.LoadAssetAtPath<Texture>("Packages/com.zelude.meshpreview/Assets/Icons/Reset.png");
+			_reset.Add(resetImage);
+			_reset.tooltip = "Reset all blendshapes.";
+			_reset.clicked += HandleResetButtonClicked;
+
 			toolbar.Add(_collapsedToggle);
 			toolbar.Add(_showIndexToggle);
 			toolbar.Add(_sortingToggle);
 			toolbar.Add(_searchField);
+			toolbar.Add(new ToolbarSpacer());
+			toolbar.Add(_reset);
 
 			var blendShapesGui = new IMGUIContainer();
 			blendShapesGui.cullingEnabled = false;
@@ -51,6 +60,11 @@ namespace ZeludeEditor
 
 			this.Add(toolbar);
 			this.Add(blendShapesGui);
+		}
+
+		private void HandleResetButtonClicked()
+		{
+			List.ResetBlendShapes();
 		}
 
 		private void HandleSortingToggleValueChanged(ChangeEvent<bool> evt)
