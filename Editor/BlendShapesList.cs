@@ -188,7 +188,7 @@ namespace ZeludeEditor
 				var rect = args.rowRect;
 				rect.xMin += GetContentIndent(blendShapeItem);
 				EditorGUIUtility.labelWidth = 100;
-				var content = EditorGUIUtility.TrTextContent(blendShapeItem.GetName(_showIndex), blendShapeItem.GetTooltip(_showIndex));
+				var content = EditorGUIUtility.TrTextContent(blendShapeItem.GetName(_showIndex), blendShapeItem.GetTooltip(true));
 				EditorGUI.BeginChangeCheck();
 				var newValue = EditorGUI.Slider(rect, content, blendShapeItem.NormalizedWeight, 0f, 1f);
 				if (EditorGUI.EndChangeCheck())
@@ -226,7 +226,7 @@ namespace ZeludeEditor
 				if (allIndicesEqual)
 					return BlendShapes[0].GetName(showIndex);
 
-				return BlendShape.FormatName(BlendShapes[0].Name, "?");
+				return showIndex ? BlendShape.FormatName(BlendShapes[0].Name, "?") : BlendShapes[0].Name;
 			}
 		}
 
